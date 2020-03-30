@@ -26,3 +26,11 @@
 * Stateless - Application or process does not store data over time
   * request has no connection to what occured before or after; what is allowed in s not automatically let back out
   * NACLs fall into this category because you have to explicitly tell it what inbound and outbound traffic to allow independently
+
+### References:
+
+* https://www.fugue.co/blog/cloud-network-security-101-aws-security-groups-vs-nacls
+
+* https://medium.com/awesome-cloud/aws-difference-between-security-groups-and-network-acls-adc632ea29ae
+
+* https://acloud.guru/forums/aws-certified-solutions-architect-associate/discussion/-KTCn8RqocSpPV4RwdQo/what-is-difference-between-stateless-statefull?answer=-LRCbl3J6rRbHNZgyLOK
