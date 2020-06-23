@@ -1,4 +1,37 @@
-# Helpful Links:
+### Table of Contents
+- [Dictionaries](#dictionaries)
+- [for Loops](#for-loops)
+- [Logic Operations](#logic-operations)
+- [Reading user input](#reading-user-input)
+- [Functions](#functions)
+- [More on functions](#more-on-functions)
+- [Using Standard Library Packages](#using-standard-library-packages)
+- [Environemnt Variables](#environemnt-variables)
+- [Interacting with files](#interacting-with-files)
+- [Parsing Command Line Parameters](#parsing-command-line-parameters)
+- [Robust CLIs with 'argparse'](#robust-clis-with-argparse)
+- [Error Handling](#error-handling)
+- [Exit statuses](#exit-statuses)
+- [Execute Shell Commands from Python](#execute-shell-commands-from-python)
+- [Advanced Iteration With List Comprehensions](#advanced-iteration-with-list-comprehensions)
+- [`random` and `json`](#random-and-json)
+- [`shutil` & `glob`](#shutil--glob)
+- [`re` (regular expression) & `math`](#re-regular-expression--math)
+- [Installing Third-Party PAckages Using 'pip'](#installing-third-party-packages-using-pip)
+- [Virtual Environments (venv)](#virtual-environments-venv)
+- [Using Third-Party Packages in your Scripts](#using-third-party-packages-in-your-scripts)
+- [pgbackup](#pgbackup)
+- [Initial Project layout](#initial-project-layout)
+- [Intro to TDD (Test Driven Development) and First Tests](#intro-to-tdd-test-driven-development-and-first-tests)
+- [Implementing CLI Guided by Tests](#implementing-cli-guided-by-tests)
+- [Introduction to Mocking in Tests](#introduction-to-mocking-in-tests)
+- [Implementing PostgreSQL Interaction](#implementing-postgresql-interaction)
+- [Implementing Local File Storage](#implementing-local-file-storage)
+- [Implementing AWS Interaction](#implementing-aws-interaction)
+- [Wiring everything together](#wiring-everything-together)
+- [Building and sharing a Wheel Distribution](#building-and-sharing-a-wheel-distribution)
+
+## Helpful Links:
 https://pythonnotesnotorganizedyet.readthedocs.io/en/latest/PythonSystemAutomation.html?highlight=create_parser#
 
 # Dictionaries
@@ -91,7 +124,7 @@ There are a few other ways to create dictionaries that we might see, those being
 - - -
 &nbsp;
 
-# `for` Loops
+# for Loops
 It’s incredibly common to need to repeat something a set number of times or to iterate over content. Here is where looping and iteration come into play.
 
 Python Documentation For This Video
