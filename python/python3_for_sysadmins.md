@@ -9,7 +9,7 @@
 - [Environemnt Variables](#environemnt-variables)
 - [Interacting with files](#interacting-with-files)
 - [Parsing Command Line Parameters](#parsing-command-line-parameters)
-- [Robust CLIs with 'argparse'](#robust-clis-with-argparse)
+- [Robust CLIs with `argparse`](#robust-clis-with-argparse)
 - [Error Handling](#error-handling)
 - [Exit statuses](#exit-statuses)
 - [Execute Shell Commands from Python](#execute-shell-commands-from-python)
@@ -1059,7 +1059,7 @@ Using [`sys.argv`](https://docs.python.org/3/library/sys.html#sys.argv) is the s
 - - -
 &nbsp;
 
-# Robust CLIs with 'argparse'
+# Robust CLIs with `argparse`
 
 We can build simple scripts with positional arguments using `sys.argv`, but when we want to provide a better command-line user experience, we should use something that can provide contextual information and documentation. Let's learn how to use the [`argparse`](https://docs.python.org/3/library/argparse.html) module to do just that.
 
