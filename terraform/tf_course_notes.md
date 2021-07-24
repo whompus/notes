@@ -114,4 +114,57 @@ General workflow:
 
 - Sensitive param allows you to hide sensitive variable values so it is not shown during execution:
 
-![SEnsitive Values](./assets/variable_sensitive.png)
+![Sensitive Values](./assets/variable_sensitive.png)
+
+### Variable Type Contraints
+
+Basic Types:
+ - string
+ - number
+ - bool
+
+Complex Types:
+ - list, set, map, object, tuple
+
+Examples:
+
+```
+# String Type
+
+variable "image_id" {
+    type    = string
+    default = "Hello"
+}
+```
+
+```
+# List Type
+
+variable "availability_zone_names" {
+    type    = list(string)
+    default = ["us-west-1a]
+}
+```
+
+```
+# List of Objects
+
+variable "docker_ports" {
+    type = list(object({
+        internal = number
+        external = number
+        protocol = string
+    }))
+    default = [
+        {
+            internal = 8300
+            external = 8300
+            protocol = "tcp"
+        }
+    ]
+}
+```
+
+### Terraform Output - Output Values
+
+![Output Values](./assets/output_values.png)
