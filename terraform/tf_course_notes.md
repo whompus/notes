@@ -3,6 +3,8 @@
 - [Initializing your TF dir](#initializing-your-tf-dir)
 - [Plan, Apply, Destroy](#plan-apply-destroy)
 - [Understanding Terraform Code](#understanding-terraform-code)
+- [Terraform State basics](#terraform-state-basics)
+- [Terraform Variables and Outputs](#terraform-variables-and-outputs)
 
 ---
 
@@ -84,3 +86,18 @@ General workflow:
 
 - Fetches info on an **already-existing** resource in your environment
 - To access to the resource in your code, use the resource address, as outlined above
+
+# Terraform State basics
+
+## What is "state?"
+- A way for TF to keep tabs on what has been deployed
+  - Helps TF calculate deployment deltas and create new deplyment plans
+  - `terraform plan` calculates against the state file for changes
+- Stored in flat files by default named "`terraform.tfstate`"
+  - Can be stored locally or remotely (like an S3 bucket)
+- Dump of metadata that keeps track of deployment and what has been deployed
+  - On `terraform destroy`, terraform will look at the state file and determine which resources to destroy. Instead of making api calls to determine what is currently in your infra
+
+NEVER LOSE YOUR STATE FILE OR MAKE IT PUBLIC
+
+# Terraform Variables and Outputs
