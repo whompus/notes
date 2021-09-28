@@ -70,11 +70,11 @@ General workflow:
 
 ## Configuring the provider
 
-![image info](./assets/provider.png)
+![Provider Example](./assets/provider.png)
 
 ## Resource block
 
-![image info](./assets/resource_block.png)
+![Resource Block](./assets/resource_block.png)
 
 - Creates **new resource**
 - To access to the resource in your code, use the resource address, as outlined above
@@ -82,11 +82,12 @@ General workflow:
 
 ## Data source block
 
-![image info](./assets/data_source.png)
+![Data Source Block](./assets/data_source.png)
 
 - Fetches info on an **already-existing** resource in your environment
 - To access to the resource in your code, use the resource address, as outlined above
 
+<<<<<<< HEAD
 # Terraform State basics
 
 ## What is "state?"
@@ -101,3 +102,88 @@ General workflow:
 NEVER LOSE YOUR STATE FILE OR MAKE IT PUBLIC
 
 # Terraform Variables and Outputs
+=======
+## Variables and Outputs
+
+![Variable Structure](./assets/variables.png)
+
+- Default value in case the user doesn't provide one explicitly
+- Configuration between curly braces are optional, could declare something like:
+
+    ```
+    variable "my-var" {}
+    ```
+
+    - In this case, you will need to pass the variable a value either through an OS environment variable or command line input
+
+- To reference the variable, use:
+
+    ```
+    var.my-var
+    ```
+- Best practice to collect all variable in a file called `terraform.tfvars`
+
+### Variable Validation (optional)
+
+![Variable Validation](./assets/variable_validation.png)
+
+- Useful because you don't want to find out midway that the value passed was illegal and wait for everything to roll back.
+  - Terrafrom will stop deployment if variable doesn't meet the condition
+
+- Sensitive param allows you to hide sensitive variable values so it is not shown during execution:
+
+![Sensitive Values](./assets/variable_sensitive.png)
+
+### Variable Type Contraints
+
+Basic Types:
+ - string
+ - number
+ - bool
+
+Complex Types:
+ - list, set, map, object, tuple
+
+Examples:
+
+```
+# String Type
+
+variable "image_id" {
+    type    = string
+    default = "Hello"
+}
+```
+
+```
+# List Type
+
+variable "availability_zone_names" {
+    type    = list(string)
+    default = ["us-west-1a]
+}
+```
+
+```
+# List of Objects
+
+variable "docker_ports" {
+    type = list(object({
+        internal = number
+        external = number
+        protocol = string
+    }))
+    default = [
+        {
+            internal = 8300
+            external = 8300
+            protocol = "tcp"
+        }
+    ]
+}
+```
+
+### Terraform Output - Output Values
+
+![Output Values](./assets/output_values.png)
+>>>>>>> b7dd0020f7a4549e881a88eeea81f13bd718b863
