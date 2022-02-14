@@ -1,6 +1,6 @@
 # Big-Picture Overview
 
-![big_picture](./assets/big_picture.png)
+![big_picture](./cka/assets/big_picture.png)
 
 # K8s Control Plane and Components
 
@@ -8,7 +8,7 @@ The control plane is collection of multiple compnents resonsible for managing th
 
 Individual control plane compnents can run on any machine in the cluster, but usually are run on dedicated *controller* machines.
 
-![control_plane](./assets/control_plane.png)
+![control_plane](./cka/assets/control_plane.png)
 
 ## kube-api-server
 
@@ -42,7 +42,7 @@ Provides an interface between K8s and various cloud platforms. Only used when us
 
 Machines where containers are run in the cluster.
 
-![nodes](./assets/nodes.png)
+![nodes](./cka/assets/nodes.png)
 
 ## kubelet
 
