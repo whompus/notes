@@ -60,9 +60,12 @@ K8s supports multiple container runtime implementations including Docker and con
 
 Network proxy, runs on each node and handles some tasks relating ot networking between containers and services in the cluster.
 
+# Building a K8s cluster
 
+## kubeadm
 
+Tool that will simplify the process of setting up our kubernetes cluster.
 
-
+[Building a Kubernetes Cluster](../assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
 
 
