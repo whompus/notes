@@ -1,4 +1,6 @@
-### Table of Contents
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
 - [Big-Picture Overview](#big-picture-overview)
 - [K8s Control Plane and Components](#k8s-control-plane-and-components)
   - [kube-api-server](#kube-api-server)
@@ -19,6 +21,8 @@
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
   - [Upgrading with `kubeadm`](#upgrading-with-kubeadm)
   - [Backup and restore etcd Cluster Data](#backup-and-restore-etcd-cluster-data)
+
+
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
