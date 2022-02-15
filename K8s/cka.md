@@ -2,12 +2,36 @@
 
 <!-- TOC -->
 
-- [Big-Picture Overview](#big-picture-overview)
-- [K8s Control Plane and Components](#k8s-control-plane-and-components)
-- [K8s Nodes](#k8s-nodes)
-- [Building a K8s cluster](#building-a-k8s-cluster)
-- [Using Namespaces in K8s](#using-namespaces-in-k8s)
-- [K8s Management Overview](#k8s-management-overview)
+- [1. Big-Picture Overview](#1-big-picture-overview)
+- [2. K8s Control Plane and Components](#2-k8s-control-plane-and-components)
+    - [2.1. kube-api-server](#21-kube-api-server)
+    - [2.2. etcd](#22-etcd)
+    - [2.3. kube-scheduler](#23-kube-scheduler)
+    - [2.4. kube-controller-manager](#24-kube-controller-manager)
+    - [2.5. cloud-controller-manager](#25-cloud-controller-manager)
+- [3. K8s Nodes](#3-k8s-nodes)
+    - [3.1. kubelet](#31-kubelet)
+    - [3.2. container runtime](#32-container-runtime)
+    - [3.3. kube-proxy](#33-kube-proxy)
+- [4. Building a K8s cluster](#4-building-a-k8s-cluster)
+    - [4.1. kubeadm](#41-kubeadm)
+- [5. Using Namespaces in K8s](#5-using-namespaces-in-k8s)
+- [6. K8s Management](#6-k8s-management)
+    - [6.1. Intro to K8s High-Availability HA](#61-intro-to-k8s-high-availability-ha)
+        - [6.1.1. Stacked etcd](#611-stacked-etcd)
+        - [6.1.2. External etcd](#612-external-etcd)
+    - [6.2. Intro K8s Management Tools](#62-intro-k8s-management-tools)
+        - [6.2.1. kubectl](#621-kubectl)
+        - [6.2.2. kubeadm](#622-kubeadm)
+        - [6.2.3. minikube](#623-minikube)
+        - [6.2.4. Helm](#624-helm)
+        - [6.2.5. Kompose](#625-kompose)
+        - [6.2.6. Kustomize](#626-kustomize)
+    - [6.3. Safely Draining a K8s Node](#63-safely-draining-a-k8s-node)
+        - [6.3.1. What is draining?](#631-what-is-draining)
+        - [6.3.2. How to drain](#632-how-to-drain)
+    - [6.4. Upgrading with kubeadm](#64-upgrading-with-kubeadm)
+    - [6.5. Backup and restore etcd Cluster Data](#65-backup-and-restore-etcd-cluster-data)
 
 <!-- /TOC -->
 
@@ -110,7 +134,7 @@ When you're working with Kubernetes via kubectl, you may need to sometimes speci
 
 Create a namespace: `kubectl create namespace my-namespace`
 
-# K8s Management Overview
+# K8s Management
 
 ## Intro to K8s High-Availability (HA)
 
@@ -124,7 +148,7 @@ When using multiple control planes for HA, you will likely need to communicate w
 
 <img src="./assets/stacked_etcd.png" height="400">
 
-Runs on the same nodes as the rest of the control plane components. Design pattern used by clusters that are setup by `kubeadm`.
+Runs on the same nodes as the rest of the control plane components. Design pattern used by clusters that are setup by `kubeadm` .
 
 Each individual control plane nodes would have it's own etcd instance.
 
@@ -136,9 +160,51 @@ Etcd lives on completely different servers than where we are running our normal 
 
 You can have any numver of K8s control plane instances and any number of etcd nodes. 
 
-## Intro K8s Management Tools
+## Intro K8s Management [Tools](https://kubernetes.io/docs/reference/tools/)
+
+There is a variety of management tools available for K8s. These tools interface with K8s to provide additional functionality. When using K8s, it is a good idea to be aware of some of these tools.
+
+### `kubectl`
+
+The official command line interface for K8s. It is the main method of interacting with K8s in the CKA.
+
+### `kubeadm`
+
+Tool that allows you to quickly and easily create K8s clusters. Like setting up the control plane and worker nodes.
+
+### minikube
+
+Allows for easy setup of a cluster with a single machine. Supports multi-nodes on local device.
+
+### [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
+
+Provides templating and package management system for K8s objects/ You can use it to manage your own templates (known as charts). You can also download and use shared templates. 
+
+### Kompose
+
+Helps you translate Docker compase files into K8s objects.
+
+### Kustomize
+
+A config mananagement tool for managing K8s object configs. 
 
 ## Safely Draining a K8s Node
+
+### What is draining?
+
+When performing maintenance, you may sometimes need to remove a K8s node from service.
+
+To do this, you can drain the node. Containers running on the node will be gracefully terminated (and potentially rescheduled to another node)
+
+Diagram of drain process:
+
+<img src="./assets/kubectl_drain.png" height="400">
+
+### How to drain
+
+To drain a node, use the `kubectl drain` command, e.g. `kubectl drain <node name> --ignore-daemonsets`
+
+When draining a node, you may need to ignore [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (like the command above). DaemonSets are pods that are tied to each node. If you have any DaemonSet pods running on the node, you will likely need to use the `--ignore-daemonsets` flag.
 
 ## Upgrading with `kubeadm`
 
