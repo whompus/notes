@@ -35,11 +35,11 @@
 
 <!-- /TOC -->
 
-# Big-Picture Overview
+# 1. Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
 
-# K8s Control Plane and Components
+# 2. K8s Control Plane and Components
 
 The control plane is collection of multiple compnents resonsible for managing the cluster globally.
 
@@ -47,65 +47,65 @@ Individual control plane compnents can run on any machine in the cluster, but us
 
 <img src="./assets/control_plane.png" height="400">
 
-## kube-api-server
+## 2.1. kube-api-server
 
 Frontend; serves the K8s API which is the primary interface to the control plane and cluster itself.
 
 You will usually interact with your cluster with this API.
 
-## etcd
+## 2.2. etcd
 
 Backend data store for the kubernetes cluster/API. Provides high-availability storage for all data relating to the state of the cluster.
 
 When performing operations against the API, data is being read from and written to etcd.
 
-## kube-scheduler
+## 2.3. kube-scheduler
 
 Scheduling means selecting an available node in the cluster on which to run containers.
 
 When using the API, for example, to run a pod or container, kube-scheduler is the component responsbile for assigning that container to a worker node.
 
-## kube-controller-manager
+## 2.4. kube-controller-manager
 
 Runs a collection of multiple controller utilities in a single process.
 
 Manages utility processes related to automation within the cluster.
 
-## cloud-controller-manager
+## 2.5. cloud-controller-manager
 
 Provides an interface between K8s and various cloud platforms. Only used when using cloud-based resources alongside K8s.
 
-# K8s Nodes
+# 3. K8s Nodes
 
 Machines where containers are run in the cluster.
 
 <img src="./assets/nodes.png" height="400">
 
-## kubelet
+## 3.1. kubelet
 
 K8s agent that runs on each node. Communicates with the control plane. Basically manages containers on each node.
 
 Handles process of reporting container status and other data about containers back to the control plane. Status of the node, various information about each container running on that node, etc.
 
-## container runtime
+## 3.2. container runtime
 
 Separate from K8s, not built in. Separate piece of software for actually running the containers.
 
 K8s supports multiple container runtime implementations including Docker and containerd.
 
-## kube-proxy
+## 3.3. kube-proxy
 
 Network proxy, runs on each node and handles some tasks relating ot networking between containers and services in the cluster.
 
-# Building a K8s cluster
+# 4. Building a K8s cluster
 
-## kubeadm
+## 4.1. kubeadm
 
 Tool that will simplify the process of setting up our kubernetes cluster.
 
 [Building a Kubernetes Cluster](../assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
 
-# Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
+# 5. Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
 
 Namespaces are essentially virtual clusters backed by the same physcial cluster. Kubernetes objects, such as pods and containers, live in namespaces. Namepsaces are a way to separate and organize objecs in your cluster.
 
@@ -134,9 +134,9 @@ When you're working with Kubernetes via kubectl, you may need to sometimes speci
 
 Create a namespace: `kubectl create namespace my-namespace`
 
-# K8s Management
+# 6. K8s Management
 
-## Intro to K8s High-Availability (HA)
+## 6.1. Intro to K8s High-Availability (HA)
 
 K8s facilitates HA applications, but you can also design the cluster itself to be HA. Need *multiple control plane nodes* to do this.
 
@@ -144,7 +144,7 @@ When using multiple control planes for HA, you will likely need to communicate w
 
 <img src="./assets/basic_ha.png" height="400">
 
-### Stacked etcd
+### 6.1.1. Stacked etcd
 
 <img src="./assets/stacked_etcd.png" height="400">
 
@@ -152,7 +152,7 @@ Runs on the same nodes as the rest of the control plane components. Design patte
 
 Each individual control plane nodes would have it's own etcd instance.
 
-### External etcd
+### 6.1.2. External etcd
 
 <img src="./assets/external_etcd.png" height="400">
 
@@ -160,37 +160,37 @@ Etcd lives on completely different servers than where we are running our normal 
 
 You can have any numver of K8s control plane instances and any number of etcd nodes. 
 
-## Intro K8s Management [Tools](https://kubernetes.io/docs/reference/tools/)
+## 6.2. Intro K8s Management [Tools](https://kubernetes.io/docs/reference/tools/)
 
 There is a variety of management tools available for K8s. These tools interface with K8s to provide additional functionality. When using K8s, it is a good idea to be aware of some of these tools.
 
-### `kubectl`
+### 6.2.1. `kubectl`
 
 The official command line interface for K8s. It is the main method of interacting with K8s in the CKA.
 
-### `kubeadm`
+### 6.2.2. `kubeadm`
 
 Tool that allows you to quickly and easily create K8s clusters. Like setting up the control plane and worker nodes.
 
-### minikube
+### 6.2.3. minikube
 
 Allows for easy setup of a cluster with a single machine. Supports multi-nodes on local device.
 
-### [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
+### 6.2.4. [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
 
 Provides templating and package management system for K8s objects/ You can use it to manage your own templates (known as charts). You can also download and use shared templates. 
 
-### Kompose
+### 6.2.5. Kompose
 
 Helps you translate Docker compase files into K8s objects.
 
-### Kustomize
+### 6.2.6. Kustomize
 
 A config mananagement tool for managing K8s object configs. 
 
-## Safely Draining a K8s Node
+## 6.3. Safely Draining a K8s Node
 
-### What is draining?
+### 6.3.1. What is draining?
 
 When performing maintenance, you may sometimes need to remove a K8s node from service.
 
@@ -200,12 +200,12 @@ Diagram of drain process:
 
 <img src="./assets/kubectl_drain.png" height="400">
 
-### How to drain
+### 6.3.2. How to drain
 
 To drain a node, use the `kubectl drain` command, e.g. `kubectl drain <node name> --ignore-daemonsets`
 
 When draining a node, you may need to ignore [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (like the command above). DaemonSets are pods that are tied to each node. If you have any DaemonSet pods running on the node, you will likely need to use the `--ignore-daemonsets` flag.
 
-## Upgrading with `kubeadm`
+## 6.4. Upgrading with `kubeadm`
 
-## Backup and restore etcd Cluster Data
+## 6.5. Backup and restore etcd Cluster Data
