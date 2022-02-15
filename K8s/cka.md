@@ -7,12 +7,13 @@
 - [K8s Nodes](#k8s-nodes)
 - [Building a K8s cluster](#building-a-k8s-cluster)
 - [Using Namespaces in K8s](#using-namespaces-in-k8s)
+- [K8s Management Overview](#k8s-management-overview)
 
 <!-- /TOC -->
 
 # Big-Picture Overview
 
-<img src="./../assets/big_picture.png" height="400">
+<img src="./assets/big_picture.png" height="400">
 
 # K8s Control Plane and Components
 
@@ -20,7 +21,7 @@ The control plane is collection of multiple compnents resonsible for managing th
 
 Individual control plane compnents can run on any machine in the cluster, but usually are run on dedicated *controller* machines.
 
-<img src="./../assets/control_plane.png" height="400">
+<img src="./assets/control_plane.png" height="400">
 
 ## kube-api-server
 
@@ -54,11 +55,11 @@ Provides an interface between K8s and various cloud platforms. Only used when us
 
 Machines where containers are run in the cluster.
 
-<img src="./../assets/nodes.png" height="400">
+<img src="./assets/nodes.png" height="400">
 
 ## kubelet
 
-K8s agent that runs on each node. Communicates with the control plane.
+K8s agent that runs on each node. Communicates with the control plane. Basically manages containers on each node.
 
 Handles process of reporting container status and other data about containers back to the control plane. Status of the node, various information about each container running on that node, etc.
 
@@ -84,6 +85,8 @@ Tool that will simplify the process of setting up our kubernetes cluster.
 
 Namespaces are essentially virtual clusters backed by the same physcial cluster. Kubernetes objects, such as pods and containers, live in namespaces. Namepsaces are a way to separate and organize objecs in your cluster.
 
+In Kubernetes, namespace provides a mechanism for isolating groups of resources within a single cluster. Names of resources need to be unique within a namespace, but not across namespaces. Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc).
+
 Kubernetes starts with four initial namespaces:
 
 * `default` The default namespace for objects with no other namespace
@@ -106,3 +109,37 @@ When you're working with Kubernetes via kubectl, you may need to sometimes speci
 `--namespace` flag: `kubectl get pods --namepsace my-namespace`
 
 Create a namespace: `kubectl create namespace my-namespace`
+
+# K8s Management Overview
+
+## Intro to K8s High-Availability (HA)
+
+K8s facilitates HA applications, but you can also design the cluster itself to be HA. Need *multiple control plane nodes* to do this.
+
+When using multiple control planes for HA, you will likely need to communicate with the K8s API via a Load Balancer. This iobncludes clients such as kubelet instances running on worker nodes. 
+
+<img src="./assets/basic_ha.png" height="400">
+
+### Stacked etcd
+
+<img src="./assets/stacked_etcd.png" height="400">
+
+Runs on the same nodes as the rest of the control plane components. Design pattern used by clusters that are setup by `kubeadm`.
+
+Each individual control plane nodes would have it's own etcd instance.
+
+### External etcd
+
+<img src="./assets/external_etcd.png" height="400">
+
+Etcd lives on completely different servers than where we are running our normal K8s control plane components. 
+
+You can have any numver of K8s control plane instances and any number of etcd nodes. 
+
+## Intro K8s Management Tools
+
+## Safely Draining a K8s Node
+
+## Upgrading with `kubeadm`
+
+## Backup and restore etcd Cluster Data
