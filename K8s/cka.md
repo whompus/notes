@@ -1,6 +1,4 @@
-# Table of Contents
 
-- [Table of Contents](#table-of-contents)
 - [Big-Picture Overview](#big-picture-overview)
 - [K8s Control Plane and Components](#k8s-control-plane-and-components)
   - [kube-api-server](#kube-api-server)
