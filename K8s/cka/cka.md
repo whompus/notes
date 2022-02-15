@@ -1,3 +1,15 @@
+### Table of Contents
+
+<!-- TOC -->
+
+- [Big-Picture Overview](#big-picture-overview)
+- [K8s Control Plane and Components](#k8s-control-plane-and-components)
+- [K8s Nodes](#k8s-nodes)
+- [Building a K8s cluster](#building-a-k8s-cluster)
+- [Using Namespaces in K8s](#using-namespaces-in-k8s)
+
+<!-- /TOC -->
+
 # Big-Picture Overview
 
 <img src="./../assets/big_picture.png" height="400">
@@ -68,4 +80,29 @@ Tool that will simplify the process of setting up our kubernetes cluster.
 
 [Building a Kubernetes Cluster](../assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
 
+# Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
 
+Namespaces are essentially virtual clusters backed by the same physcial cluster. Kubernetes objects, such as pods and containers, live in namespaces. Namepsaces are a way to separate and organize objecs in your cluster.
+
+Kubernetes starts with four initial namespaces:
+
+* `default` The default namespace for objects with no other namespace
+
+* `kube-system` The namespace for objects created by the Kubernetes system
+
+* `kube-public` This namespace is created automatically and is readable by all users (including those not authenticated). This namespace is mostly reserved for cluster usage, in case that some resources should be visible and readable publicly throughout the whole cluster. The public aspect of this namespace is only a convention, not a requirement.
+
+* `kube-node-lease` This namespace holds Lease objects associated with each node. Node leases allow the kubelet to send heartbeats so that the control plane can detect node failure.
+
+Useful for different apps in your cluster or for different teams in your cluster
+
+List existing namespaces: `kubectl get namespaces`
+
+All clusters have a default namespace. This is use when no other namespace is specified. *NOTE:* the default namespace is used when no other namespaces are specified. K8s is going to assume you want to use that default namespace.
+
+Kubeadm clusters also have a namespace called `kube-system` , which contains system components, such as the components of the Kubernetes control plane itself.
+
+When you're working with Kubernetes via kubectl, you may need to sometimes specify a namespace and you can do this with the
+`--namespace` flag: `kubectl get pods --namepsace my-namespace`
+
+Create a namespace: `kubectl create namespace my-namespace`
