@@ -1,3 +1,4 @@
+## CKA Notes and Study Materials
 
 - [Big-Picture Overview](#big-picture-overview)
 - [K8s Control Plane and Components](#k8s-control-plane-and-components)
@@ -19,8 +20,6 @@
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
   - [Upgrading with `kubeadm`](#upgrading-with-kubeadm)
   - [Backup and restore etcd Cluster Data](#backup-and-restore-etcd-cluster-data)
-
-
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -89,7 +88,7 @@ Network proxy, runs on each node and handles some tasks relating ot networking b
 
 Tool that will simplify the process of setting up our kubernetes cluster.
 
-[Building a Kubernetes Cluster](../assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
+[Building a Kubernetes Cluster](./assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
 
 # Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
 
@@ -191,6 +190,12 @@ Diagram of drain process:
 To drain a node, use the `kubectl drain` command, e.g. `kubectl drain <node name> --ignore-daemonsets`
 
 When draining a node, you may need to ignore [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (like the command above). DaemonSets are pods that are tied to each node. If you have any DaemonSet pods running on the node, you will likely need to use the `--ignore-daemonsets` flag.
+
+Uncordoning a Node - If the node remains part of the lcuster, you can allow pods to run on the node again when maintenance is complete using `kubectl uncordon <node name>`.
+
+Cordoning the node means no pods should run on that node. 
+
+Walkthrough: [Safely Draining a Node](./assets/safe_draining.pdf)
 
 ## Upgrading with `kubeadm`
 
