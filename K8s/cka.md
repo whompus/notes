@@ -18,7 +18,7 @@
   - [Intro to K8s High-Availability (HA)](#intro-to-k8s-high-availability-ha)
   - [Intro K8s Management Tools](#intro-k8s-management-tools)
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
-  - [Upgrading with `kubeadm`](#upgrading-with-kubeadm)
+  - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
   - [Backup and restore etcd Cluster Data](#backup-and-restore-etcd-cluster-data)
 # Big-Picture Overview
 
@@ -195,8 +195,88 @@ Uncordoning a Node - If the node remains part of the lcuster, you can allow pods
 
 Cordoning the node means no pods should run on that node. 
 
+In our lab, we got this error:
+
+```
+cloud_user@k8s-control:~$ kubectl drain k8s-worker1
+node/k8s-worker1 cordoned
+error: unable to drain node "k8s-worker1", aborting command...
+
+There are pending nodes to be drained:
+ k8s-worker1
+cannot delete Pods not managed by ReplicationController, ReplicaSet, Job, DaemonSet or StatefulSet (use --force to override): default/my-pod
+cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh
+```
+
+Two things happening here, let's take a closer look at these errors:
+
+1. `cannot delete Pods not managed by ReplicationController, ReplicaSet, Job, DaemonSet or StatefulSet (use --force to override): default/my-pod`
+   
+   This is referring to our individual pod we created: `default/my-pod`. It is not able to reschedule that pod to another worker node. It's going to abort the drain process because it doesn't want to just delete that pod
+
+2. `cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh`
+
+    This is saying that it's not able to delete those DaemonSet managed pods. If we look closer, `kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh` are K8s system pods that were created when we installed the calico networking plguin and also the kubeadm process.
+
+To solve the first error, we want to use `--force`, which will actually delete that first pod. If you're in a situation where you can't lose that pod, don't use `--force`
+
+After running `kubectl drain k8s-worker1 --ignore-daemonsets --force`, we see that the pods are evicted:
+
+```
+cloud_user@k8s-control:~$ kubectl drain k8s-worker1 --ignore-daemonsets --force
+node/k8s-worker1 already cordoned
+WARNING: ignoring DaemonSet-managed Pods: kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh; deleting Pods not managed by ReplicationController, ReplicaSet, Job, DaemonSet or StatefulSet: default/my-pod
+evicting pod default/my-pod
+pod/my-pod evicted
+node/k8s-worker1 evicted
+```
+
+`my-pod` is essentially deleted. But pods part of the deployment (not `my-pod`), we will see that another replica was scheduled to run just to keep that number of deployment replicas at 2:
+
+```
+cloud_user@k8s-control:~$ kubectl get pods -o wide
+NAME                             READY   STATUS    RESTARTS   AGE   IP              NODE          NOMINATED NODE   READINESS GATES
+my-deployment-5f85c44867-q7ds5   1/1     Running   0          20m   192.168.126.2   k8s-worker2   <none>           <none>
+my-deployment-5f85c44867-v4s97   1/1     Running   0          20m   192.168.126.1   k8s-worker2   <none>           <none>
+```
+
+We see that both replicas are now running on the second worker node.
+
+Last thing is uncordon and clean up (notice the `Ready,SchedulingDisabled`) on the first worker node after draining:
+
+```
+cloud_user@k8s-control:~$ kubectl get nodes
+NAME          STATUS                     ROLES                  AGE   VERSION
+k8s-control   Ready                      control-plane,master   44h   v1.21.0
+k8s-worker1   Ready,SchedulingDisabled   <none>                 44h   v1.21.0
+k8s-worker2   Ready                      <none>                 44h   v1.21.0
+```
+
+Uncordon the node:
+
+```
+cloud_user@k8s-control:~$ kubectl uncordon k8s-worker1
+node/k8s-worker1 uncordoned
+```
+
+Uncordoning the node did not rebalance the pods. If you schedule any new pods or deployments, they will run on that node. 
+
+Clean up:
+
+```
+cloud_user@k8s-control:~$ kubectl delete deployment my-deployment
+deployment.apps "my-deployment" deleted
+```
+
 Walkthrough: [Safely Draining a Node](./assets/safe_draining.pdf)
 
-## Upgrading with `kubeadm`
+#### Notes on Deployments
+
+`kubectl get pods -o wide` - the `-o wide` gives node information as well.
+
+In our deployments, when we specify replicas, each replica should run on a different node (TODO: fact-check this). If you find that both replicas are running on the same node, increase the replicas until they are runnign on different nodes.
+
+[Pods vs. Deployments](https://stackoverflow.com/questions/41325087/what-is-the-difference-between-a-pod-and-a-deployment)
+## Upgrading K8s with `kubeadm`
 
 ## Backup and restore etcd Cluster Data
