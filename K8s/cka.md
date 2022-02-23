@@ -191,7 +191,7 @@ To drain a node, use the `kubectl drain` command, e.g. `kubectl drain <node name
 
 When draining a node, you may need to ignore [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (like the command above). DaemonSets are pods that are tied to each node. If you have any DaemonSet pods running on the node, you will likely need to use the `--ignore-daemonsets` flag.
 
-Uncordoning a Node - If the node remains part of the lcuster, you can allow pods to run on the node again when maintenance is complete using `kubectl uncordon <node name>`.
+Uncordoning a Node - If the node remains part of the lcuster, you can allow pods to run on the node again when maintenance is complete using `kubectl uncordon <node name>` .
 
 Cordoning the node means no pods should run on that node. 
 
@@ -212,15 +212,14 @@ Two things happening here, let's take a closer look at these errors:
 
 1. `cannot delete Pods not managed by ReplicationController, ReplicaSet, Job, DaemonSet or StatefulSet (use --force to override): default/my-pod`
    
-   This is referring to our individual pod we created: `default/my-pod`. It is not able to reschedule that pod to another worker node. It's going to abort the drain process because it doesn't want to just delete that pod
+   This is referring to our individual pod we created: `default/my-pod` . It is not able to reschedule that pod to another worker node. It's going to abort the drain process because it doesn't want to just delete that pod
 
 2. `cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh`
-
     This is saying that it's not able to delete those DaemonSet managed pods. If we look closer, `kube-system/calico-node-28p6s, kube-system/kube-proxy-bfpmh` are K8s system pods that were created when we installed the calico networking plguin and also the kubeadm process.
 
-To solve the first error, we want to use `--force`, which will actually delete that first pod. If you're in a situation where you can't lose that pod, don't use `--force`
+To solve the first error, we want to use `--force` , which will actually delete that first pod. If you're in a situation where you can't lose that pod, don't use `--force`
 
-After running `kubectl drain k8s-worker1 --ignore-daemonsets --force`, we see that the pods are evicted:
+After running `kubectl drain k8s-worker1 --ignore-daemonsets --force` , we see that the pods are evicted:
 
 ```
 cloud_user@k8s-control:~$ kubectl drain k8s-worker1 --ignore-daemonsets --force
@@ -231,7 +230,7 @@ pod/my-pod evicted
 node/k8s-worker1 evicted
 ```
 
-`my-pod` is essentially deleted. But pods part of the deployment (not `my-pod`), we will see that another replica was scheduled to run just to keep that number of deployment replicas at 2:
+`my-pod` is essentially deleted. But pods part of the deployment (not `my-pod` ), we will see that another replica was scheduled to run just to keep that number of deployment replicas at 2:
 
 ```
 cloud_user@k8s-control:~$ kubectl get pods -o wide
@@ -242,7 +241,7 @@ my-deployment-5f85c44867-v4s97   1/1     Running   0          20m   192.168.126.
 
 We see that both replicas are now running on the second worker node.
 
-Last thing is uncordon and clean up (notice the `Ready,SchedulingDisabled`) on the first worker node after draining:
+Last thing is uncordon and clean up (notice the `Ready,SchedulingDisabled` ) on the first worker node after draining:
 
 ```
 cloud_user@k8s-control:~$ kubectl get nodes
@@ -277,6 +276,45 @@ Walkthrough: [Safely Draining a Node](./assets/safe_draining.pdf)
 In our deployments, when we specify replicas, each replica should run on a different node (TODO: fact-check this). If you find that both replicas are running on the same node, increase the replicas until they are runnign on different nodes.
 
 [Pods vs. Deployments](https://stackoverflow.com/questions/41325087/what-is-the-difference-between-a-pod-and-a-deployment)
+
 ## Upgrading K8s with `kubeadm`
+
+[Reference materials](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/_) from official documentation.
+
+### Control plane upgrade steps
+
+1. Drain the node
+ `kubectl drain k8s-control --ignore-daemonsets`
+
+2. Upgrade kubeadm on the control plane node
+   
+
+```
+sudo apt-get update && \
+
+# override that kubeadm is in in the hold status which prevents upgrades
+sudo apt-get install -y --allow-change-held-packages kubeadm=1.22.2-00
+```
+
+3. Plan the upgrade (`sudo kubeadm upgrade plan v1.22.2`)
+   * This command will give information about what will need to be changed in order to perform this upgrade 
+4. Apply the upgrade (`sudo kubeadm upgrade apply v1.22.2`)
+5. Upgrade kubelet and kubectl on the control plane node
+
+```
+sudo apt-get update && \
+sudo apt-get install -y --allow-change-held-packages kubelet=1.22.2-00 kubectl=1.22.2-00
+```
+6. In case kubelete service had any changes, run `sudo systemctl daemon-reload` and `sudo systemctl restart kubelet`
+7. Uncordon the control plane node with `kubectl uncordon k8s-control`
+### Worker node upgrade steps
+
+1. Drain the node
+2. Upgrade kubeadm
+3. Upgrade the kubelet configuration ( `kubeadm upgrade node` )
+4. Upgrade kubelet and kubectl
+5. Uncordon the node
+
+Steps found [here](./assets/upgrade_kubeadm.pdf)
 
 ## Backup and restore etcd Cluster Data
