@@ -19,7 +19,7 @@
   - [Intro K8s Management Tools](#intro-k8s-management-tools)
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
   - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
-  - [Backup and restore etcd Cluster Data](#backup-and-restore-etcd-cluster-data)
+  - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -305,8 +305,10 @@ sudo apt-get install -y --allow-change-held-packages kubeadm=1.22.2-00
 sudo apt-get update && \
 sudo apt-get install -y --allow-change-held-packages kubelet=1.22.2-00 kubectl=1.22.2-00
 ```
+
 6. In case kubelete service had any changes, run `sudo systemctl daemon-reload` and `sudo systemctl restart kubelet`
 7. Uncordon the control plane node with `kubectl uncordon k8s-control`
+
 ### Worker node upgrade steps
 
 1. Drain the node
@@ -317,4 +319,22 @@ sudo apt-get install -y --allow-change-held-packages kubelet=1.22.2-00 kubectl=1
 
 Steps found [here](./assets/upgrade_kubeadm.pdf)
 
-## Backup and restore etcd Cluster Data
+## Backup and restore etcd cluster data
+
+[Reference docs](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster)
+
+### Why back up etcd?
+
+`etcd` is the backend data storage solution for your kubernetes cluster. As Such, all your Kubernetes objects, applications, and configurations are stored in etcd. 
+
+Therefore, you will likely want to be able to back up your cluster's data by backing up etcd. If your etcd data is lost, you'll have to rebuild all your k8s applications by hand.
+
+### Backing it up
+
+We will back up data by using the `etcdctl` command line tool.
+
+Using `etcdctl snapshot save` command to back up the data. `ETCDCTL_API=3 etcdctl --endpoints $ENDPOINT snapshot save <filename>`
+
+### Restoring etcd
+
+You can [restore](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster) etcd data from a backup using the `etcdctl snapshot restore` command. You will need to supply some additional parameters, as the restore operation creates a new logical cluster.
