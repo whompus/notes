@@ -20,6 +20,12 @@
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
   - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
   - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
+- [Working with `kubectl`](#working-with-kubectl)
+  - [`kubectl get`](#kubectl-get)
+  - [`kubectl create`](#kubectl-create)
+  - [`kubectl apply`](#kubectl-apply)
+  - [`kubectl delete`](#kubectl-delete)
+  - [`kubectl exec`](#kubectl-exec)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -163,7 +169,7 @@ Allows for easy setup of a cluster with a single machine. Supports multi-nodes o
 
 ### [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
 
-Provides templating and package management system for K8s objects/ You can use it to manage your own templates (known as charts). You can also download and use shared templates. 
+Provides templating and package management system for K8s objects. You can use it to manage your own templates (known as charts). You can also download and use shared templates. 
 
 ### Kompose
 
@@ -325,7 +331,7 @@ Steps found [here](./assets/upgrade_kubeadm.pdf)
 
 ### Why back up etcd?
 
-`etcd` is the backend data storage solution for your kubernetes cluster. As Such, all your Kubernetes objects, applications, and configurations are stored in etcd. 
+`etcd` is the backend data storage solution for your kubernetes cluster. As such, all your Kubernetes objects, applications, and configurations are stored in etcd. 
 
 Therefore, you will likely want to be able to back up your cluster's data by backing up etcd. If your etcd data is lost, you'll have to rebuild all your k8s applications by hand.
 
@@ -338,3 +344,102 @@ Using `etcdctl snapshot save` command to back up the data. `ETCDCTL_API=3 etcdct
 ### Restoring etcd
 
 You can [restore](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster) etcd data from a backup using the `etcdctl snapshot restore` command. You will need to supply some additional parameters, as the restore operation creates a new logical cluster.
+
+Lab Guide:
+
+```
+Introduction
+Backups are an important part of any resilient system. Kubernetes is no exception. In this lab, you will have the opportunity to practice your skills by backing up and restoring a Kubernetes cluster state stored in etcd. This will help you get comfortable with the steps involved in backing up Kubernetes data.
+
+Solution
+Log in to the provided lab server using the credentials provided:
+
+ssh cloud_user@<PUBLIC_IP_ADDRESS>
+Back Up the etcd Data
+Look up the value for the key cluster.name in the etcd cluster:
+
+ETCDCTL_API=3 etcdctl get cluster.name \
+  --endpoints=https://10.0.1.101:2379 \
+  --cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+  --cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+  --key=/home/cloud_user/etcd-certs/etcd-server.key
+The returned value should be beebox.
+
+Back up etcd using etcdctl and the provided etcd certificates:
+
+ETCDCTL_API=3 etcdctl snapshot save /home/cloud_user/etcd_backup.db \
+  --endpoints=https://10.0.1.101:2379 \
+  --cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+  --cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+  --key=/home/cloud_user/etcd-certs/etcd-server.key
+Reset etcd by removing all existing etcd data:
+
+sudo systemctl stop etcd
+sudo rm -rf /var/lib/etcd
+Restore the etcd Data from the Backup
+Restore the etcd data from the backup (this command spins up a temporary etcd cluster, saving the data from the backup file to a new data directory in the same location where the previous data directory was):
+
+sudo ETCDCTL_API=3 etcdctl snapshot restore /home/cloud_user/etcd_backup.db \
+  --initial-cluster etcd-restore=https://10.0.1.101:2380 \
+  --initial-advertise-peer-urls https://10.0.1.101:2380 \
+  --name etcd-restore \
+  --data-dir /var/lib/etcd
+Set ownership on the new data directory:
+
+sudo chown -R etcd:etcd /var/lib/etcd
+Start etcd:
+
+sudo systemctl start etcd
+Verify the restored data is present by looking up the value for the key cluster.name again:
+
+ETCDCTL_API=3 etcdctl get cluster.name \
+  --endpoints=https://10.0.1.101:2379 \
+  --cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+  --cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+  --key=/home/cloud_user/etcd-certs/etcd-server.key
+The returned value should be beebox.
+```
+
+# Working with `kubectl`
+
+References for objects:
+
+[Kubeneretes.io documentation on objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/)
+[Understanding kubernetes objects](https://www.magalix.com/blog/understanding-kubernetes-objects)
+
+You can also run `kubectl api-resources` to get all k8s objects.
+
+## `kubectl get`
+
+Use kubectl get to list objects in the K8s cluster:
+ `kubectl get <object type> <object name> -o <output> --sort-by <JSONPath> --selector <selector>`
+
+* `-o`: set output format like yaml or json
+* `--sort-by`: sort output using a JSONPath expression
+* `--selector`: filter results by [label](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
+
+## `kubectl create`
+
+Used to create objects. Supply a YAML file with `-f` to create an object from a YAML descripto stored in a file. 
+
+ `kubectl create -f <file name>`
+
+If you attempt to create an object that already exists, an error will occur.
+
+## `kubectl apply`
+
+Similar to to `kubectl create` . However, if you use `kubectl apply` on and object that already exists, it will modify the existing object, if possible.
+
+ `kubectl apply -f <file name>`
+
+## `kubectl delete`
+
+Deletes objects from the cluster.
+
+ `kubectl delete <object type> <object name>`
+
+## `kubectl exec`
+
+Run commands inside containers. KLeep in mind that, in order for a command to succeed, the necessary software must exist within the container to run it. For toubleshooting and seeing what is going on inside your containers. use `-c` if your pod has multiple containers.
+
+ `kubectl exec <pod name> -c <container name> -- <command>`
