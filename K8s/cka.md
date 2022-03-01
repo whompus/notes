@@ -26,6 +26,7 @@
   - [`kubectl apply`](#kubectl-apply)
   - [`kubectl delete`](#kubectl-delete)
   - [`kubectl exec`](#kubectl-exec)
+  - [More on `kubectl`](#more-on-kubectl)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -443,3 +444,9 @@ Deletes objects from the cluster.
 Run commands inside containers. KLeep in mind that, in order for a command to succeed, the necessary software must exist within the container to run it. For toubleshooting and seeing what is going on inside your containers. use `-c` if your pod has multiple containers.
 
  `kubectl exec <pod name> -c <container name> -- <command>`
+
+## More on `kubectl`
+
+More info on [`kubectl` operations](https://kubernetes.io/docs/reference/kubectl/overview/)
+
+And even more in depth [here](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-).
