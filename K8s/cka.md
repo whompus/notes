@@ -451,7 +451,7 @@ And even more in depth [here](https://kubernetes.io/docs/reference/generated/kub
 
 ## Kubectl Tips
 
-Impertive commands, Quick sample YAML, Export YAML from an object, Using the K8s.io docs, etc.
+Imperative commands, Quick sample YAML, Export YAML from an object, Using the K8s.io docs, etc.
 
 ### Imperative commands
 
@@ -492,3 +492,14 @@ For roles, need both a `role` and `roleBinding` definition (in two separate file
 In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:`, `verbs:` state what action can be done with the resource
 
 In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
+
+### For hands-on lab:
+
+"Create a role called pod-reader. Provide it with read access to pods and container logs in the beebox-mobile namespace."
+
+Solution:
+
+* generate yaml file for role using imperative command: `kubectl create role pod-reader --resource=pods,pods/log --namespace=beebox-mobile --verb=get,list,watch --dry-run=client -o yaml > pod-reader-role.yml`
+* generate roleBinding yml: `kc create rolebinding pod-reader --role=pod-reader --user=dev --namespace=beebox-mobile --dry-run=client -o yaml > pod-reader-rolebinding.yml`
+
+`kubectl apply -f` both, profit. 
