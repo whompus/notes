@@ -20,13 +20,10 @@
   - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
   - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
   - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
-- [Working with `kubectl`](#working-with-kubectl)
-  - [`kubectl get`](#kubectl-get)
-  - [`kubectl create`](#kubectl-create)
-  - [`kubectl apply`](#kubectl-apply)
-  - [`kubectl delete`](#kubectl-delete)
-  - [`kubectl exec`](#kubectl-exec)
-  - [More on `kubectl`](#more-on-kubectl)
+- [K8s Object Management](#k8s-object-management)
+  - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
+  - [Kubectl Tips](#kubectl-tips)
+  - [RBAC](#rbac)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -280,7 +277,7 @@ Walkthrough: [Safely Draining a Node](./assets/safe_draining.pdf)
 
 `kubectl get pods -o wide` - the `-o wide` gives node information as well.
 
-In our deployments, when we specify replicas, each replica should run on a different node (TODO: fact-check this). If you find that both replicas are running on the same node, increase the replicas until they are runnign on different nodes.
+In our deployments, when we specify replicas, each replica should run on a different node ( # TODO: fact-check this). If you find that both replicas are running on the same node, increase the replicas until they are runnign on different nodes.
 
 [Pods vs. Deployments](https://stackoverflow.com/questions/41325087/what-is-the-difference-between-a-pod-and-a-deployment)
 
@@ -401,7 +398,7 @@ ETCDCTL_API=3 etcdctl get cluster.name \
 The returned value should be beebox.
 ```
 
-# Working with `kubectl`
+# K8s Object Management
 
 References for objects:
 
@@ -409,8 +406,9 @@ References for objects:
 [Understanding kubernetes objects](https://www.magalix.com/blog/understanding-kubernetes-objects)
 
 You can also run `kubectl api-resources` to get all k8s objects.
+## Basic commands - working with `kubectl`
 
-## `kubectl get`
+### `kubectl get`
 
 Use kubectl get to list objects in the K8s cluster:
  `kubectl get <object type> <object name> -o <output> --sort-by <JSONPath> --selector <selector>`
@@ -419,7 +417,7 @@ Use kubectl get to list objects in the K8s cluster:
 * `--sort-by`: sort output using a JSONPath expression
 * `--selector`: filter results by [label](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
 
-## `kubectl create`
+### `kubectl create`
 
 Used to create objects. Supply a YAML file with `-f` to create an object from a YAML descripto stored in a file. 
 
@@ -427,26 +425,70 @@ Used to create objects. Supply a YAML file with `-f` to create an object from a 
 
 If you attempt to create an object that already exists, an error will occur.
 
-## `kubectl apply`
+### `kubectl apply`
 
 Similar to to `kubectl create` . However, if you use `kubectl apply` on and object that already exists, it will modify the existing object, if possible.
 
  `kubectl apply -f <file name>`
 
-## `kubectl delete`
+### `kubectl delete`
 
 Deletes objects from the cluster.
 
  `kubectl delete <object type> <object name>`
 
-## `kubectl exec`
+### `kubectl exec`
 
 Run commands inside containers. KLeep in mind that, in order for a command to succeed, the necessary software must exist within the container to run it. For toubleshooting and seeing what is going on inside your containers. use `-c` if your pod has multiple containers.
 
  `kubectl exec <pod name> -c <container name> -- <command>`
 
-## More on `kubectl`
+### More on `kubectl`
 
 More info on [`kubectl` operations](https://kubernetes.io/docs/reference/kubectl/overview/)
 
 And even more in depth [here](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-).
+
+## Kubectl Tips
+
+Impertive commands, Quick sample YAML, Export YAML from an object, Using the K8s.io docs, etc.
+
+### Imperative commands
+
+So far, we've been using [*declarative*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/) commands which define objects using data structures such as YAML or JSON and using `kubectl create|apply` to instantiate those objects.
+
+Imperative commands define objects using kubectl commands and flags instead of yaml files, e.g. `kubectl create deployment my-deployment --image=nginx`
+
+### Quick sample YAML
+
+Use the `--dry-run` flag to run an imperative command without creating an object. Combine it with `-o yaml` to quickly obtain a sample yaml file you can manipulate.
+
+You can record a command with the `--record` flag. E.g. `kubectl scale deployment my-deployment --replicas=5 --record`.
+
+Then, within the object after `kubectl describe <object>` you can see the command in the annotations. 
+
+### Use the docs
+
+You can often find YAML examples in the K8s documentation. You are allowed to use this documentation during the exam. Feel free to copy and paste example YAML and/or coammdns from the docs.
+
+## RBAC
+
+Allows you to control what users are allowed to do and access in your cluster. E.g. allow devs to read metadat and logs from K8s pods but not make changes to them.
+
+### Roles and Cluster Roles
+
+K8s objects that define a set of perms. These perms determine what users can do in the cluster. 
+
+A *Role* defines perms within a particular ns, and a *ClusterRol*e defines cluster-wide perms not specific to a single ns. RoleBindings are objects that link users to *Roles* and *ClusterRoleBindings* link users to cluster roles. 
+
+*RoleBinding* and *ClusterRoleBinding* are objects that connect Roles and ClusterRoles to users. These determine which users are allowed to use the permissions that are defined in the role and cluster. 
+
+<img src="./assets/rbacobjects.png" height="400">
+
+[Sample RBAC Config](./assets/rbac_sample.pdf)
+
+For roles, need both a `role` and `roleBinding` definition (in two separate files? # TODO fact-check this). same with cluster stuff. 
+
+In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:`, `verbs:` state what action can be done with the resource
+
+In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
