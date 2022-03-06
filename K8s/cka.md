@@ -24,6 +24,7 @@
   - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
   - [Kubectl Tips](#kubectl-tips)
   - [RBAC](#rbac)
+  - [Service accounts](#service-accounts)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -406,6 +407,7 @@ References for objects:
 [Understanding kubernetes objects](https://www.magalix.com/blog/understanding-kubernetes-objects)
 
 You can also run `kubectl api-resources` to get all k8s objects.
+
 ## Basic commands - working with `kubectl`
 
 ### `kubectl get`
@@ -445,7 +447,7 @@ Run commands inside containers. KLeep in mind that, in order for a command to su
 
 ### More on `kubectl`
 
-More info on [`kubectl` operations](https://kubernetes.io/docs/reference/kubectl/overview/)
+More info on [ `kubectl` operations](https://kubernetes.io/docs/reference/kubectl/overview/)
 
 And even more in depth [here](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-).
 
@@ -463,7 +465,7 @@ Imperative commands define objects using kubectl commands and flags instead of y
 
 Use the `--dry-run` flag to run an imperative command without creating an object. Combine it with `-o yaml` to quickly obtain a sample yaml file you can manipulate.
 
-You can record a command with the `--record` flag. E.g. `kubectl scale deployment my-deployment --replicas=5 --record`.
+You can record a command with the `--record` flag. E.g. `kubectl scale deployment my-deployment --replicas=5 --record` .
 
 Then, within the object after `kubectl describe <object>` you can see the command in the annotations. 
 
@@ -473,7 +475,7 @@ You can often find YAML examples in the K8s documentation. You are allowed to us
 
 ## RBAC
 
-Allows you to control what users are allowed to do and access in your cluster. E.g. allow devs to read metadat and logs from K8s pods but not make changes to them.
+[RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) allows you to control what users are allowed to do and access in your cluster. E.g. allow devs to read metadat and logs from K8s pods but not make changes to them.
 
 ### Roles and Cluster Roles
 
@@ -489,7 +491,7 @@ A *Role* defines perms within a particular ns, and a *ClusterRol*e defines clust
 
 For roles, need both a `role` and `roleBinding` definition (in two separate files? # TODO fact-check this). same with cluster stuff. 
 
-In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:`, `verbs:` state what action can be done with the resource
+In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:` , `verbs:` state what action can be done with the resource
 
 In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
 
@@ -503,3 +505,45 @@ Solution:
 * generate roleBinding yml: `kc create rolebinding pod-reader --role=pod-reader --user=dev --namespace=beebox-mobile --dry-run=client -o yaml > pod-reader-rolebinding.yml`
 
 `kubectl apply -f` both, profit. 
+
+## Service accounts
+
+In K8s a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) is an account used by container processes within pods to authenticate with the K8s API.
+
+If your pods need to communicate with the k8s API, you can use service accounts to control their access.
+
+### Creating service accounts
+
+A service account object can be created with some YAML just like any other k8s object:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-serviceaccount
+```
+
+You can manage access control for service accounts, just like anyother use, using RBAC objects.
+
+Bind service accounts with ClusterRoles or ClusterRoleBindings to provide access to K8s API functionality.
+
+What it looks like to bind a role to a service account usign a RoleBinding:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sa-pod-reader
+subjects:
+- kind: Service Account
+  name: my-serviceaccount
+  namespace: default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+`kubectl get sa` will list service accounts.
+
+`kubectl describe sa my-serviceaccount` will describe the service account.
