@@ -25,6 +25,7 @@
   - [Kubectl Tips](#kubectl-tips)
   - [RBAC](#rbac)
   - [Service accounts](#service-accounts)
+  - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -547,3 +548,26 @@ roleRef:
 `kubectl get sa` will list service accounts.
 
 `kubectl describe sa my-serviceaccount` will describe the service account.
+
+## Inspecting Pod Resource Usage
+
+[Tools for monitoring resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/)
+
+[`kubectl` cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#interacting-with-running-pods)
+
+[Resource metrics pipeline](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/)
+
+### K8s Metrics Server
+
+In order to view metrics about the resources pods and containers are using, we need an add-on to collect and provide that data. One such add-on is the Kubernetes Metrics Server.
+
+Once we've installed the add-on we can use `kubectl top` command.
+* Can view data abour reource usage in your pods and nodes
+* Also supports flags like `--sort-by` and `--selector`
+* `kubectl top pod --sort-by <JSONPATH> --selector <selector>`
+
+How to install and use (basic): [Hands-on demo](./assets/inspecting_resources.pdf)
+
+Querying the metrics server API: `kubectl get --raw /apis/metrics.k8s.io`
+
+Can also check node CPU usage: `kubectl top node`
