@@ -26,6 +26,10 @@
   - [RBAC](#rbac)
   - [Service accounts](#service-accounts)
   - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
+- [Pods and Containers](#pods-and-containers)
+  - [Managing application configuration](#managing-application-configuration)
+  - [Managing container resources](#managing-container-resources)
+  - [Monitor container health with probes](#monitor-container-health-with-probes)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -553,7 +557,7 @@ roleRef:
 
 [Tools for monitoring resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/)
 
-[`kubectl` cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#interacting-with-running-pods)
+[ `kubectl` cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#interacting-with-running-pods)
 
 [Resource metrics pipeline](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/)
 
@@ -571,3 +575,127 @@ How to install and use (basic): [Hands-on demo](./assets/inspecting_resources.pd
 Querying the metrics server API: `kubectl get --raw /apis/metrics.k8s.io`
 
 Can also check node CPU usage: `kubectl top node`
+
+# Pods and Containers
+
+## Managing application configuration
+
+### Application configuration
+
+When you are running apps in K8s, you may want to pass dynamic calues to your applications at runtime to control how they behave. This is known as application configuration.
+
+Bascially passing data to containers that conrols how they run. 
+
+You can store configuration data in [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/). These are key-value maps and they can be passed to your container applications.
+
+Can also store config data in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/), which is for more sensitive data. These need to be b64 encoded within a yaml file.
+One way to pass the configmap and secrets to your containers is through [environment variables](https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/).
+These variables will be visible to your container process at runtime:
+
+```yaml
+spec:
+  containers:
+  - ...
+    env:
+    - name: ENVVAR
+      valueFrom:
+        configMapRef:
+          name: my-configmap
+          key: mykey
+```
+
+`$ENVVAR` will then be passed to our container process.
+
+Configuration data from ConfigMaps and Secrets can also be passed to containers in the form of mounted volumes. This will cause the configuration data to appear in files available to the container file system.
+
+Each top-level key in the configuration data will appear as a file containing all keys below that top-level key.
+
+[Hands-on demo](./assets/config_maps_and_secrets.pdf)
+
+## Managing container resources
+
+### Resource requests
+
+[Resource requests](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) allow you to define an amount of resources (like CPU and mem) that a container can use or you expect it to use. The scheduler will then avoid scheduling pods on nodes that do not have the available resources. 
+
+Example: if your resource request is asking for 5 gb of mem, and there isn't 5 gb available on a node, the scheduler will look for a different node with that mem available.
+
+*NOTE:* containers are allowed to use more (or less) than the requested resources. *Resource requests only affect scheduling, not what happens after the pod is scheduled for a node*. Moreover, the resource request does not force the container to stay within that limit. 
+
+Example resource request:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    resources:
+      requests:
+        # CPU is measured in CPU units, which are 1/1000 of one CPU or 1/4 of a cpu
+        cpu: "250m" # this is 250 milli-CPUs
+        # Memory is measured in bytes
+        memory: "128Mi"
+```
+
+### Resource limits
+
+The container runtime is responsible for enforcing the [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) after scheduling, and different CRs do this differently.
+
+Some runtimes will enforce these limits by terminating container processes that attempt to use more than the allowed amount of resources.
+
+Example resource limit:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    name: busybox
+    image: busybox
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "128Mi" 
+```
+
+[Hands-on demo](./assets/resources_hands_on.pdf)
+
+## Monitor container health with [probes](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#types-of-probe)
+
+### Container health
+
+K8s provides a number of features that allow you to build robust apps, such as the ability to to automatically restart unhealthy containers. To make the most of those features, K8s needs to be able to accurately determine the status of your apps. This means actively monitoring container health. More in this in [pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+
+### Liveness Probes
+
+Allows you to automatically determine whether or not a container application is in a healthy state and/or running. If the liveness probe fails, the kubelet kills the container, and the container is subjected to its [restart policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). If a container does not provide a liveness probe, the default state is `Success`
+
+By default, *K8s will only consider a container to be "down" if the container process stops*. 
+
+Liveness probes allow us to customize this detection mechanism and make it more sophisticated. Sometimes your containers might still be running. The process might not have stopped, but things are still broken. With liveness probes, we can detect those more sophisticated, more subtle situations where things aren't working, but the container is still running.
+
+### Startup probes
+
+Similar to liveness probes, but the difference is these run on startup and stop running once they succeed. Whereas liveness probes are constantly running and checking container status.
+
+These check whether the application within the container has started. *All other probes are disabled if a startup probe is provided, until it succeeds*. 
+
+If the startup probe fails, the kubelet kills the container and the container is subjected to its restart policy. If a container does not provide a startup probe, the default state is `Success`
+
+### Readiness probes
+
+Used to determine when a container is ready to access requests. If the readiness probe fails, the endpoints controller removes the Pod's IP addess from the endpoints of all Services that match the Pod. 
+
+When you have a service backed by multiple container endpoints, use traffic will not be sent to a particular pod until its containers have all passed the readiness checks defined by their readiness probes.
+
+The default state of readiness before the initial delay is `Failure`. If a container does not provide a readiness probe, the default state is Success.
+
+### [Check mechanisms](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#probe-check-methods)
+
+These are ways to check containers using probes via different methods.
