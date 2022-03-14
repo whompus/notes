@@ -30,6 +30,7 @@
   - [Managing application configuration](#managing-application-configuration)
   - [Managing container resources](#managing-container-resources)
   - [Monitor container health with probes](#monitor-container-health-with-probes)
+  - [Demo](#demo)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -690,7 +691,7 @@ If the startup probe fails, the kubelet kills the container and the container is
 
 ### Readiness probes
 
-Used to determine when a container is ready to access requests. If the readiness probe fails, the endpoints controller removes the Pod's IP addess from the endpoints of all Services that match the Pod. 
+Used to determine when a container is ready to accept requests. If the readiness probe fails, the endpoints controller removes the Pod's IP addess from the endpoints of all Services that match the Pod. 
 
 When you have a service backed by multiple container endpoints, use traffic will not be sent to a particular pod until its containers have all passed the readiness checks defined by their readiness probes.
 
@@ -699,3 +700,7 @@ The default state of readiness before the initial delay is `Failure`. If a conta
 ### [Check mechanisms](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#probe-check-methods)
 
 These are ways to check containers using probes via different methods.
+
+## Demo 
+
+[Hands on demo for pod lifecycle and container Probes](./assets/probes_hands_on.pdf)
