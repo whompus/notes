@@ -679,6 +679,8 @@ By default, *K8s will only consider a container to be "down" if the container pr
 
 Liveness probes allow us to customize this detection mechanism and make it more sophisticated. Sometimes your containers might still be running. The process might not have stopped, but things are still broken. With liveness probes, we can detect those more sophisticated, more subtle situations where things aren't working, but the container is still running.
 
+Can turn the threshold down on delay and period so that it recovers quicker. 
+
 ### Startup probes
 
 Similar to liveness probes, but the difference is these run on startup and stop running once they succeed. Whereas liveness probes are constantly running and checking container status.
@@ -761,7 +763,7 @@ spec:
 
 We see it does restart on failure:
 
-<img src="./assets/fail.png" height="100">
+<img src="./assets/fail.png" height="200">
 
 ### "Never" restart policy
 
