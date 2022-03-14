@@ -30,7 +30,7 @@
   - [Managing application configuration](#managing-application-configuration)
   - [Managing container resources](#managing-container-resources)
   - [Monitor container health with probes](#monitor-container-health-with-probes)
-  - [Demo](#demo)
+  - [Building Self-Healing Pods with Restart Policies](#building-self-healing-pods-with-restart-policies)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -581,9 +581,7 @@ Can also check node CPU usage: `kubectl top node`
 
 ## Managing application configuration
 
-### Application configuration
-
-When you are running apps in K8s, you may want to pass dynamic calues to your applications at runtime to control how they behave. This is known as application configuration.
+When you are running apps in K8s, you may want to pass dynamic values to your applications at runtime to control how they behave. This is known as application configuration.
 
 Bascially passing data to containers that conrols how they run. 
 
@@ -701,6 +699,87 @@ The default state of readiness before the initial delay is `Failure`. If a conta
 
 These are ways to check containers using probes via different methods.
 
-## Demo 
+### Demo 
 
 [Hands on demo for pod lifecycle and container Probes](./assets/probes_hands_on.pdf)
+
+## Building Self-Healing Pods with [Restart Policies](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy)
+
+[Hands on demo](./assets/restart-policies.pdf)
+
+Restart policies allow you to automatically restart containers when they fail. These policies allow you to customize this behavior by defining when you want a pods containers to be automatically restarted.
+
+Able to define *when* or even *if* your conatiners should be auto-restarted. 
+
+### "Always" restart policy
+
+Always is the default policy in K8s. Containers will always be restarted if they stop, even if they completed successfully. 
+
+_Use this policy for apps that should always be running._
+
+Basically if the container stop or becomes unhelthy, it will be restarted.
+
+### "OnFailure" restart policy
+
+Will restart containers only if the container process exists with an error code or the container is determined to be unhealthy by a liveness probe. 
+
+_Use this policy for applications that need to run successfully and then stop._
+
+Example:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onfailure-pod
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: busybox
+    image: busybox
+    command: ['sh', '-c', 'sleep 10']
+```
+
+<img src="./assets/on-failure.png" height="100">
+
+Because this pod completed successfully with no errors after it slept for 10 seconds, it was not restarted.
+
+However with this code:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onfailure-pod
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: busybox
+    image: busybox
+    command: ['sh', '-c', 'sleep 10; this is a bad command that will fail']
+```
+
+We see it does restart on failure:
+
+<img src="./assets/fail.png" height="100">
+
+### "Never" restart policy
+
+Essentially the opposite of the Always policy. Will never auto-restart pods. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: never-pod
+spec:
+  restartPolicy: Never
+  containers:
+  - name: busybox
+    image: busybox
+    command: ['sh', '-c', 'sleep 10; this is a bad command that will fail']
+```
+
+The pod does not restart:
+
+<img src="./assets/never-pod.png" height="100">
