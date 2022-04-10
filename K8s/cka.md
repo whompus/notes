@@ -31,6 +31,10 @@
   - [Managing container resources](#managing-container-resources)
   - [Monitor container health with probes](#monitor-container-health-with-probes)
   - [Building Self-Healing Pods with Restart Policies](#building-self-healing-pods-with-restart-policies)
+  - [Creating Multi-Container Pods](#creating-multi-container-pods)
+  - [Init Containers](#init-containers)
+- [Advanced Pod Allocation](#advanced-pod-allocation)
+  - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -121,7 +125,7 @@ Useful for different apps in your cluster or for different teams in your cluster
 
 List existing namespaces: `kubectl get namespaces`
 
-All clusters have a default namespace. This is use when no other namespace is specified. *NOTE:* the default namespace is used when no other namespaces are specified. K8s is going to assume you want to use that default namespace.
+All clusters have a default namespace. This is use when no other namespace is specified. **NOTE:** the default namespace is used when no other namespaces are specified. K8s is going to assume you want to use that default namespace.
 
 Kubeadm clusters also have a namespace called `kube-system` , which contains system components, such as the components of the Kubernetes control plane itself.
 
@@ -619,7 +623,7 @@ Each top-level key in the configuration data will appear as a file containing al
 
 Example: if your resource request is asking for 5 gb of mem, and there isn't 5 gb available on a node, the scheduler will look for a different node with that mem available.
 
-*NOTE:* containers are allowed to use more (or less) than the requested resources. *Resource requests only affect scheduling, not what happens after the pod is scheduled for a node*. Moreover, the resource request does not force the container to stay within that limit. 
+**NOTE:** containers are allowed to use more (or less) than the requested resources. *Resource requests only affect scheduling, not what happens after the pod is scheduled for a node*. Moreover, the resource request does not force the container to stay within that limit. 
 
 Example resource request:
 
@@ -695,7 +699,7 @@ Used to determine when a container is ready to accept requests. If the readiness
 
 When you have a service backed by multiple container endpoints, use traffic will not be sent to a particular pod until its containers have all passed the readiness checks defined by their readiness probes.
 
-The default state of readiness before the initial delay is `Failure`. If a container does not provide a readiness probe, the default state is Success.
+The default state of readiness before the initial delay is `Failure` . If a container does not provide a readiness probe, the default state is Success.
 
 ### [Check mechanisms](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#probe-check-methods)
 
@@ -711,7 +715,7 @@ These are ways to check containers using probes via different methods.
 
 Restart policies allow you to automatically restart containers when they fail. These policies allow you to customize this behavior by defining when you want a pods containers to be automatically restarted.
 
-Able to define *when* or even *if* your conatiners should be auto-restarted. 
+Able to define *when* or even *if* your containers should be auto-restarted. 
 
 ### "Always" restart policy
 
@@ -785,3 +789,107 @@ spec:
 The pod does not restart:
 
 <img src="./assets/never-pod.png" height="100">
+
+## Creating Multi-Container Pods
+
+Resources:
+* [Using Pods](https://kubernetes.io/docs/concepts/workloads/pods/#using-pods)
+* [Shared Volumes](https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/)
+* [Patterns for Composite Containers](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/)
+* [Creating Multi-Container Pods (PDF)](assets/creating_multi_container_pods.pdf)
+
+### What is a multi-container pod?
+
+A K8s pod can have one or more containers. A Pod with more than one container is a multi-container pod.
+
+In a multi-container pod, the containers share resources such as storage and networking and will work together to provide functionality.
+
+**It is best practice to keep containers in separate pods unless they need to share resources**
+
+Cross-container interaction is when containers sharing the same pod can interact with one another using shared resources:
+
+* Network: containers share the same networking namespace and can communicate with one another on any port, even if that port is not exposed to the cluster.
+* Storage: containers can use shared volumes to share data in a pod
+
+### Why use a multi-container pod?
+
+[More info](https://www.mirantis.com/blog/multi-container-pods-and-container-communication-in-kubernetes/#:~:text=The%20primary%20purpose%20of%20a, %E2%80%9Chelp%E2%80%9D%20the%20main%20container)
+
+* **Sidecar containers:** “help” the main container. Some examples include log or data change watchers, monitoring adapters, and so on. A log watcher, for example, can be built once by a different team and reused across different applications. Another example of a sidecar container is a file or data loader that generates data for the main container.
+
+* **Proxies, bridges, and adapters** connect the main container with the external world. For example, Apache HTTP server or nginx can serve static files. It can also act as a reverse proxy to a web application in the main container to log and limit HTTP requests. Another example is a helper container that re-routes requests from the main container to the external world. This makes it possible for the main container to connect to localhost to access, for example, an external database, but without any service discovery.
+
+Sidecar example:
+
+You have an app that is hard-coded to write log output to a file on disk. These logs will be harder to reach than normal because they are written to a file on the container filesystem rather than the console.  
+
+You can add a sidecar container to the pod that reads the log file from a shared volume and prints it to the console so the log output will appear in the container log. 
+
+<img src="./assets/sidecar.png" height="300">
+
+## [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
+
+[Reference material](assets/init_containers.pdf)
+
+Containers that once during the startup process of a pod. A Pod can have any number of init containers, and they will each run once (in order) to completion.
+
+Can perform a number of startup tasks. Offload startup tasks to init containers to keep things light and secure.
+
+Use cases:
+* Cause a pod to wait for another k8s resource to be created before finishing startup
+* Perform sensitive startup steps securely outside of app containers. e.g. steps to run only during startup, like a password or secret. If main app container is comprimised, then sensitive data won't be. 
+* Populate data into a shared volume
+* Communicate with another service. e.g register pod with external service. 
+# Advanced Pod Allocation
+
+## Exploring K8s Scheduling
+
+References:
+[K8s Scheduler](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/)
+[Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
+[Lesson Reference](assets/k8s_scheduling.pdf)
+
+### Scheduling process
+
+The K8s node selects a suitable Node for each Pod. Takes into account:
+* Resource requests vs. available node resources
+* Various configurations that affect scheduling using [node labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
+
+### `nodeSelector`
+
+You can configure a `nodeSelector` for your Pods to limit which Node(s) the Pod can be scheduled on.
+
+Use labels to filter suitable nodes.
+
+Example:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeSelector:
+    myLabel: myvalue # only schedule to nodes that have this label
+```
+
+### `nodeName`
+
+Can bypass scheduling entirely and assign directly to node.
+
+Example:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeName: k8s-worker1
+```
+
+
