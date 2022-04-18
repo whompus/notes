@@ -859,7 +859,9 @@ The K8s node selects a suitable Node for each Pod. Takes into account:
 
 You can configure a `nodeSelector` for your Pods to limit which Node(s) the Pod can be scheduled on.
 
-Use labels to filter suitable nodes.
+Use labels to filter suitable nodes. Tells scheduler to only schedule services to nodes with the corresponding label
+
+To show node labels: `kubectl get nodes|pods|whatever --show-labels` or show resources by label: `kubectl get nodes|pods|whatever -l mylabelname`
 
 Example:
 ```yaml
@@ -870,10 +872,12 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx
+    image: nginx:1.19.1
   nodeSelector:
     myLabel: myvalue # only schedule to nodes that have this label
 ```
+
+To validate a deplyoment like this to a selected node, we can use `kubectl get pod <pod-name> -o wide`
 
 ### `nodeName`
 
@@ -888,7 +892,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx
+    image: nginx:1.19.1
   nodeName: k8s-worker1
 ```
 
