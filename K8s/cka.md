@@ -35,6 +35,7 @@
   - [Init Containers](#init-containers)
 - [Advanced Pod Allocation](#advanced-pod-allocation)
   - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
+  - [Using DaemonSets](#using-daemonsets)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -864,6 +865,7 @@ Use labels to filter suitable nodes. Tells scheduler to only schedule services t
 To show node labels: `kubectl get nodes|pods|whatever --show-labels` or show resources by label: `kubectl get nodes|pods|whatever -l mylabelname`
 
 Example:
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -884,6 +886,7 @@ To validate a deplyoment like this to a selected node, we can use `kubectl get p
 Can bypass scheduling entirely and assign directly to node.
 
 Example:
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -896,4 +899,40 @@ spec:
   nodeName: k8s-worker1
 ```
 
+## Using [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
 
+Lesson Reference: [Using DaemonSets](assets/using_daemonsets.pdf)
+
+### What is a DaemonSet?
+
+Automatically runs a copy of a Pod on each node.
+
+Will also run a copy of the pod on new nodes as they are added to the cluster
+
+### Difference between DaemonSets and Scheduling
+
+DaemonSets respect normal scheduling rules around node labels, taints, and tolerations. 
+
+If a pod would not normally be scheduled on a node, a DaemonSet will not create a copy of the Pod on that Node. 
+
+### Sample DaemonSet
+
+`my-daemonset.yml`
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: my-daemonset
+  template:
+    metadata:
+      labels:
+        app: my-daemonset
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.19.1
+```
