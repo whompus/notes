@@ -1,5 +1,6 @@
 ## CKA Notes and Study Materials
 
+- [Helpful Links (resources, cheat sheets, etc.)](#helpful-links-resources-cheat-sheets-etc)
 - [Big-Picture Overview](#big-picture-overview)
 - [K8s Control Plane and Components](#k8s-control-plane-and-components)
   - [kube-api-server](#kube-api-server)
@@ -36,6 +37,13 @@
 - [Advanced Pod Allocation](#advanced-pod-allocation)
   - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
   - [Using DaemonSets](#using-daemonsets)
+  - [Using Static Pods](#using-static-pods)
+- [K8s Deployments Overview](#k8s-deployments-overview)
+# Helpful Links (resources, cheat sheets, etc.)
+* [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
+* [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+* [Useful Aliases](https://betterprogramming.pub/useful-kubectl-aliases-that-will-speed-up-your-coding-54960185d10)
+* [Intellipaat Cheat Sheet](https://intellipaat.com/blog/tutorial/devops-tutorial/kubernetes-cheat-sheet/)
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -814,7 +822,7 @@ Cross-container interaction is when containers sharing the same pod can interact
 
 ### Why use a multi-container pod?
 
-[More info](https://www.mirantis.com/blog/multi-container-pods-and-container-communication-in-kubernetes/#:~:text=The%20primary%20purpose%20of%20a, %E2%80%9Chelp%E2%80%9D%20the%20main%20container)
+[More info](https://www.mirantis.com/blog/multi-container-pods-and-container-communication-in-kubernetes/)
 
 * **Sidecar containers:** “help” the main container. Some examples include log or data change watchers, monitoring adapters, and so on. A log watcher, for example, can be built once by a different team and reused across different applications. Another example of a sidecar container is a file or data loader that generates data for the main container.
 
@@ -917,7 +925,8 @@ If a pod would not normally be scheduled on a node, a DaemonSet will not create 
 
 ### Sample DaemonSet
 
-`my-daemonset.yml`
+ `my-daemonset.yml`
+
 ```yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -936,3 +945,19 @@ spec:
       - name: nginx
         image: nginx:1.19.1
 ```
+
+## Using [Static Pods](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/)
+
+Managed directly but [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) on a node, and **_not_** by the the K8s API server. They can run even if there is no K8s API server present. 
+
+Kubelet automatically creates static pods from YAML manifests located in the manifest path on the node. 
+
+[Lesson Reference](assets/using_static_pods.pdf)
+
+### Mirror Pods
+
+Kubelet will create a mirror Pod for each static pod. Mirror Pods allow you to see the status of the static pod via the K8s API, but you cannot change or manage them via the API. 
+
+Essentially a ghost representation of the static pod in the K8s API that aloow you to view but not change it. 
+
+# K8s Deployments Overview
