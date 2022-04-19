@@ -39,6 +39,7 @@
   - [Using DaemonSets](#using-daemonsets)
   - [Using Static Pods](#using-static-pods)
 - [K8s Deployments Overview](#k8s-deployments-overview)
+  - [Use cases for deployments](#use-cases-for-deployments)
 # Helpful Links (resources, cheat sheets, etc.)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
@@ -961,3 +962,20 @@ Kubelet will create a mirror Pod for each static pod. Mirror Pods allow you to s
 Essentially a ghost representation of the static pod in the K8s API that aloow you to view but not change it. 
 
 # K8s Deployments Overview
+
+[Lesson reference](assets/deployments.pdf)
+
+A [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) is an object that defines a desired state for a ReplicaSet (a set of replica pods). 
+
+The deployment controller seeks to maintain the desired state by creating, deleting and replacing Pods with new configs.
+
+A Deployment's desired state includes:
+
+* `replicas`: The number of replica Pods the Deployment will seek to maintain
+* `selector`: A label selector use to identify the replica Pods managed by the deployment
+* `template`: A template Pod definition used to create replica pods, essentially jsut a YAML definition for a pod. Whenever the deployment creates a pod replica, it'll use this template
+
+## Use cases for deployments
+* Easily scale an application up or down by changing the number of replcias.
+* Perform rolling updates to deploy a new software version
+* Roll back to a previous software version
