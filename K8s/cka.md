@@ -1,6 +1,6 @@
 ## CKA Notes and Study Materials
 
-- [Helpful Links (resources, cheat sheets, etc.)](#helpful-links-resources-cheat-sheets-etc)
+- [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
 - [Big-Picture Overview](#big-picture-overview)
 - [K8s Control Plane and Components](#k8s-control-plane-and-components)
   - [kube-api-server](#kube-api-server)
@@ -27,6 +27,7 @@
   - [RBAC](#rbac)
   - [Service accounts](#service-accounts)
   - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
+  - [Services](#services)
 - [Pods and Containers](#pods-and-containers)
   - [Managing application configuration](#managing-application-configuration)
   - [Managing container resources](#managing-container-resources)
@@ -40,11 +41,25 @@
   - [Using Static Pods](#using-static-pods)
 - [K8s Deployments Overview](#k8s-deployments-overview)
   - [Use cases for deployments](#use-cases-for-deployments)
-# Helpful Links (resources, cheat sheets, etc.)
+  - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
+# Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 * [Useful Aliases](https://betterprogramming.pub/useful-kubectl-aliases-that-will-speed-up-your-coding-54960185d10)
 * [Intellipaat Cheat Sheet](https://intellipaat.com/blog/tutorial/devops-tutorial/kubernetes-cheat-sheet/)
+
+As soon as you enter the terminal run these commands
+
+`alias k=kubectl` Lets you type "k" in place of "kubectl"
+
+`export do="--dry-run=client -o yaml"` This will let you create yaml files when you use the "kubectl run" command [ex: kubectl run nginx --image=nginx $do > nginx.yaml]. Then you can vim into the yaml you created. NEVER create a yaml file from scratch. It takes away too much valuable time. You can copy and paste almost any yaml configuration you will need from Kubernetes.io
+
+`sudo -i` Gives you root privileges. Run this immediately because the user they give you on the exam doesn't seem to have permission to do anything...
+
+**USE THE RIGHT CONTEXT FOR EACH QUESTION**. You will be instructed to use a specific context for each question. They give you the command to switch to the right context so all you have to do is copy and paste it into the terminal before you do anything. I cannot stress how important this step is. If you forget this step and use the wrong context you will most likely get the question wrong.
+
+Be **VERY** familiar with the kubectl cheat sheet and the reference docs. There are a lot of commands on both that will help you out tremendously if you know where to look.
+
 # Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
@@ -63,23 +78,92 @@ Frontend; serves the K8s API which is the primary interface to the control plane
 
 You will usually interact with your cluster with this API.
 
+config lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`
+
+service config lives at `/etc/systemd/system/kube-apiserver.service`
+
 ## etcd
+
+ETCD is a distributed reliable key-value store (unlike a traditional tabular/relational database with columns and rows.) that is simple, secure and fast.
 
 Backend data store for the kubernetes cluster/API. Provides high-availability storage for all data relating to the state of the cluster.
 
+Everytime you run `kubectl get ...` you are retrieving info from the etcd server.
+
+Listens on port 2379 by default.
+
 When performing operations against the API, data is being read from and written to etcd.
+
+### etcd commands
+
+Additional information about ETCDCTL Utility
+
+ETCDCTL is the CLI tool used to interact with ETCD.
+
+ETCDCTL can interact with ETCD Server using 2 API versions - Version 2 and Version 3.  By default its set to use Version 2. Each version has different sets of commands.
+
+For example ETCDCTL version 2 supports the following commands:
+
+```
+etcdctl backup
+etcdctl cluster-health
+etcdctl mk
+etcdctl mkdir
+etcdctl set
+```
+
+Whereas the commands are different in version 3
+
+```
+etcdctl snapshot save 
+etcdctl endpoint health
+etcdctl get
+etcdctl put
+```
+
+To set the right version of API set the environment variable ETCDCTL_API command
+
+ `export ETCDCTL_API=3`
+
+When API version is not set, it is assumed to be set to version 2. And version 3 commands listed above don't work. When API version is set to version 3, version 2 commands listed above don't work.
+
+Apart from that, you must also specify path to certificate files so that ETCDCTL can authenticate to the ETCD API Server. The certificate files are available in the etcd-master at the following path. We discuss more about certificates in the security section of this course. So don't worry if this looks complex:
+
+```
+--cacert /etc/kubernetes/pki/etcd/ca.crt     
+--cert /etc/kubernetes/pki/etcd/server.crt     
+--key /etc/kubernetes/pki/etcd/server.key
+```
+
+So for the commands I showed in the previous video to work you must specify the ETCDCTL API version and path to certificate files. Below is the final form:
+
+```bash
+kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl get / --prefix --keys-only --limit=10 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt  --key /etc/kubernetes/pki/etcd/server.key" 
+```
 
 ## kube-scheduler
 
-Scheduling means selecting an available node in the cluster on which to run containers.
+Scheduling means selecting an available node in the cluster on which to run containers. **This does not place the pod on the node, kubelet does that**
 
-When using the API, for example, to run a pod or container, kube-scheduler is the component responsbile for assigning that container to a worker node.
+When using the API, for example, to run a pod or container, kube-scheduler is the component responsbile for assigning that container to a worker node, and kubelete creates that pod.
+
+View kube-scheduler options - kubeadm: `/etc/kubernetes/manifests/kube-scheduler.yaml`
 
 ## kube-controller-manager
 
 Runs a collection of multiple controller utilities in a single process.
 
-Manages utility processes related to automation within the cluster.
+Manages utility processes related to automation within the cluster. Watch status, remediate situation.
+
+Controller: a process that continuously monitors the state of the components within the system. 
+
+When you install this, it also installs the various other [controllers](https://kubernetes.io/docs/concepts/architecture/controller/)
+
+In case any controllers dont work or dont exist, this would be a good place to start. 
+
+View kube-controller-manager options - kubeadm: `/etc/kubernetes/manifests/kube-controller-manager.yaml`
+
+Options are at: `/etc/systemd/system/kube-controller-manager.service`
 
 ## cloud-controller-manager
 
@@ -95,7 +179,13 @@ Machines where containers are run in the cluster.
 
 K8s agent that runs on each node. Communicates with the control plane. Basically manages containers on each node.
 
+When it recieves instructions to load a pod or container, it pulls the image and runs it on the node. Then monitors.
+
 Handles process of reporting container status and other data about containers back to the control plane. Status of the node, various information about each container running on that node, etc.
+
+**Must always manually install kubelet on your wokrer nodes**
+
+To check: `ps -aux | grep kubelet`
 
 ## container runtime
 
@@ -103,9 +193,11 @@ Separate from K8s, not built in. Separate piece of software for actually running
 
 K8s supports multiple container runtime implementations including Docker and containerd.
 
-## kube-proxy
+## [kube-proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
 
 Network proxy, runs on each node and handles some tasks relating ot networking between containers and services in the cluster.
+
+Deployed as a daemonset so a pod is always deployed on each node in the cluster.
 
 # Building a K8s cluster
 
@@ -591,7 +683,88 @@ Querying the metrics server API: `kubectl get --raw /apis/metrics.k8s.io`
 
 Can also check node CPU usage: `kubectl top node`
 
+## Services
+
+Enable communications between various components between internal resources and external services. 
+
+Helps us connect applications together with other applications or users. E.g. connectivity between groups of pods. 
+
+Enable loose coupling between microservices in our application.
+
+### [Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+
+#### NodePort
+
+Three ports involved: TargetPort (on the pod), Port (in the service), and NodePort (on the node)
+
+Port range is 30000-30767.
+
+Allow you to expose ports from the node to the pods. Creates service across nodes. 
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: NodePort
+  ports: #array/list, can have multiple port mappings
+  - targetPort: 80
+    port: 80
+    nodePort: 30008
+  selector: # match labels below to pods or deployments you want this attached to
+    app: my-app
+    type: front-end
+```
+
+#### ClusterIP
+
+#### LoadBalancer
+
 # Pods and Containers
+
+Usually have a 1:1 pod:container relationship within your cluster.
+
+Top level fields, [must have them](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields):
+
+```yaml
+apiVersion:
+kind:
+metadata:
+
+spec:
+
+```
+
+`apiVersion` :
+| Kind | Version |
+| ---- | ------- |
+| POD | v1 |
+| Service | v1 |
+| ReplicaSet | apps/v1 |
+| Deployment | apps/v1 |
+
+`metadata` is in the form of a dictionary. Information about the object (name, labels, etc.)
+
+Can have as many labels as your want in any key-value format.
+
+`containers` under `spec` is an list/array because you can have as many contianers as you want.
+
+Example:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: myapp-pod
+  labels:
+    app: myapp
+    type: front-end
+spec:
+  containers:
+  - name: nginx-container # "-" means first item in list.
+    image: nginx
+```
 
 ## Managing application configuration
 
@@ -975,7 +1148,75 @@ A Deployment's desired state includes:
 * `selector`: A label selector use to identify the replica Pods managed by the deployment
 * `template`: A template Pod definition used to create replica pods, essentially jsut a YAML definition for a pod. Whenever the deployment creates a pod replica, it'll use this template
 
+Hierarchy from largest to smallest objects:
+
+Deployments --> ReplicaSets --> Pods --> Containers
+
+Sample yaml: 
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
 ## Use cases for deployments
-* Easily scale an application up or down by changing the number of replcias.
+
+* Easily scale an application up or down by changing the number of replicas.
 * Perform rolling updates to deploy a new software version
 * Roll back to a previous software version
+
+## Replication Controllers vs. Replica Sets
+
+Replication controllers are an older tech being replaced by ReplicaSets.
+
+[ReplicaSet (Recommended)](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/)
+
+[ReplicationController (Legacy)](https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller/)
+
+ReplicaSet example:
+
+Reminder - `apiVersion` , `kind` , `metadata` , and `spec` are always required at top level
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-replicaset
+  labels: # can have as many labels and with any key-value to identify
+    app: myapp
+    type: front-end
+spec:
+  template: #this is going to be our "template for our replicas, can basically copy any pod definition under here
+    metadata:
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: frontend
+    spec:
+      containers: # remember that under containers is a list (noted by "-") because we can have multiple containers
+      - name: nginx-container
+        image: nginx
+  replicas: 3 #replicas go under top-level spec
+  selector: # we can manage other pods that do not fall under this specific defintion, required for ReplicaSets
+    matchLabels:
+      type: front-end
+```
