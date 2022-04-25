@@ -23,7 +23,9 @@
   - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
 - [K8s Object Management](#k8s-object-management)
   - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
-  - [Kubectl Tips](#kubectl-tips)
+  - [Imperative commands](#imperative-commands)
+  - [Quick sample YAML](#quick-sample-yaml)
+  - [Use the docs](#use-the-docs)
   - [RBAC](#rbac)
   - [Service accounts](#service-accounts)
   - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
@@ -59,6 +61,8 @@ As soon as you enter the terminal run these commands
 **USE THE RIGHT CONTEXT FOR EACH QUESTION**. You will be instructed to use a specific context for each question. They give you the command to switch to the right context so all you have to do is copy and paste it into the terminal before you do anything. I cannot stress how important this step is. If you forget this step and use the wrong context you will most likely get the question wrong.
 
 Be **VERY** familiar with the kubectl cheat sheet and the reference docs. There are a lot of commands on both that will help you out tremendously if you know where to look.
+
+
 
 # Big-Picture Overview
 
@@ -229,12 +233,23 @@ List existing namespaces: `kubectl get namespaces`
 
 All clusters have a default namespace. This is use when no other namespace is specified. **NOTE:** the default namespace is used when no other namespaces are specified. K8s is going to assume you want to use that default namespace.
 
+create a pod in desired namespace: `kubectl create -f pod-definition.yml --namespace=dev`
+
 Kubeadm clusters also have a namespace called `kube-system` , which contains system components, such as the components of the Kubernetes control plane itself.
 
 When you're working with Kubernetes via kubectl, you may need to sometimes specify a namespace and you can do this with the
-`--namespace` flag: `kubectl get pods --namepsace my-namespace`
+`--namespace` flag: `kubectl get pods --namespace my-namespace`
 
-Create a namespace: `kubectl create namespace my-namespace`
+Create a namespace: `kubectl create namespace my-namespace` or:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+```
+
+Switch namespace (important for exam to be in the right NS): `kubectl config set-context $(kubectl config current-context) --namespace=dev` or `kubectl config set-context --current --namespace=dev`
 
 # K8s Management
 
@@ -563,17 +578,13 @@ More info on [ `kubectl` operations](https://kubernetes.io/docs/reference/kubect
 
 And even more in depth [here](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-).
 
-## Kubectl Tips
-
-Imperative commands, Quick sample YAML, Export YAML from an object, Using the K8s.io docs, etc.
-
-### Imperative commands
+## Imperative commands
 
 So far, we've been using [*declarative*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/) commands which define objects using data structures such as YAML or JSON and using `kubectl create|apply` to instantiate those objects.
 
 Imperative commands define objects using kubectl commands and flags instead of yaml files, e.g. `kubectl create deployment my-deployment --image=nginx`
 
-### Quick sample YAML
+## Quick sample YAML
 
 Use the `--dry-run` flag to run an imperative command without creating an object. Combine it with `-o yaml` to quickly obtain a sample yaml file you can manipulate.
 
@@ -581,7 +592,7 @@ You can record a command with the `--record` flag. E.g. `kubectl scale deploymen
 
 Then, within the object after `kubectl describe <object>` you can see the command in the annotations. 
 
-### Use the docs
+## Use the docs
 
 You can often find YAML examples in the K8s documentation. You are allowed to use this documentation during the exam. Feel free to copy and paste example YAML and/or coammdns from the docs.
 
@@ -719,7 +730,77 @@ spec:
 
 #### ClusterIP
 
+Exposes the service on a cluster-internal IP. Makes this only reachable from within the cluster. This is the default `ServiceType`.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+spec:
+  type: ClusterIP
+  ports: #array/list, can have multiple port mappings
+  - targetPort: 80 # port where the back end is exposed
+    port: 80 # port where the service is exposed
+  selector: # match labels below to pods or deployments you want this attached to
+    app: my-app
+    type: back-end
+```
+
 #### LoadBalancer
+
+Exposes the Service externally using a cloud provider's load balancer. `NodePort` and `ClusterIP` Services, to whic hte LB routes, are automatically created.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: MyApp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+  clusterIP: 10.0.171.239
+status:
+  loadBalancer:
+    ingress:
+    - ip: 192.0.2.127
+```
+
+Sample imperative command for creating a service to expose `simple-webapp-deployment` on port 8080 (will need to configure `nodePort` in the yaml definition):
+
+`kubectl expose deployment simple-webapp-deployment --name=webapp-service --target-port=8080 --type=NodePort --port=8080 --dry-run=client -o yaml`
+
+Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
+
+`kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml`
+(This will automatically use the pod's labels as selectors)
+
+Or
+
+`kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml` (This will not use the pods labels as selectors, instead it will assume selectors as app=redis. You cannot pass in selectors as an option. So it does not work very well if your pod has a different label set. So generate the file and modify the selectors before creating the service)
+
+Create a Service named nginx of type NodePort to expose pod nginx's port 80 on port 30080 on the nodes:
+
+`kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml`
+
+(This will automatically use the pod's labels as selectors, but you cannot specify the node port. You have to generate a definition file and then add the node port in manually before creating the service with the pod.)
+
+Or
+
+`kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml`
+
+(This will not use the pods labels as selectors)
+
+Both the above commands have their own challenges. While one of it cannot accept a selector the other cannot accept a node port. I would recommend going with the kubectl expose command. If you need to specify a node port, generate a definition file using the same command and manually input the nodeport before creating the service.
+
+Can use `--expose` within pod create command to automatically create a service:
+
+`kubectl run <pod-name> --image=httpd:alpine --port=80 --expose --dry-run=client -o yaml`
 
 # Pods and Containers
 
