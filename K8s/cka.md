@@ -22,6 +22,7 @@
   - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
   - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
 - [K8s Object Management](#k8s-object-management)
+  - [Labels and Selectors](#labels-and-selectors)
   - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
   - [Imperative commands](#imperative-commands)
   - [Quick sample YAML](#quick-sample-yaml)
@@ -41,6 +42,7 @@
   - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
   - [Using DaemonSets](#using-daemonsets)
   - [Using Static Pods](#using-static-pods)
+  - [Node Affinity](#node-affinity)
 - [K8s Deployments Overview](#k8s-deployments-overview)
   - [Use cases for deployments](#use-cases-for-deployments)
   - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
@@ -61,8 +63,6 @@ As soon as you enter the terminal run these commands
 **USE THE RIGHT CONTEXT FOR EACH QUESTION**. You will be instructed to use a specific context for each question. They give you the command to switch to the right context so all you have to do is copy and paste it into the terminal before you do anything. I cannot stress how important this step is. If you forget this step and use the wrong context you will most likely get the question wrong.
 
 Be **VERY** familiar with the kubectl cheat sheet and the reference docs. There are a lot of commands on both that will help you out tremendously if you know where to look.
-
-
 
 # Big-Picture Overview
 
@@ -535,6 +535,44 @@ References for objects:
 
 You can also run `kubectl api-resources` to get all k8s objects.
 
+## Labels and Selectors
+
+[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) are key value pairs to organize objects.
+
+Sample ReplicaSet with three different pods:
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  # these labels are for the replicaset itself, used for other objects to discover this replicaset
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    # this connects teh replicaset to the pods
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      # these are the labels configured on the PODS themselves
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v3
+```
+
+[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) allow you to attach non-identifying metadata to objects.
+
+Clients such as tools and libraries can retireve this metadata. 
+
+To label a node: `kubectl label nodes <node-name> <label-key>=<label-value>` e.g. `kubectl label nodes node1 size=Large`
+
 ## Basic commands - working with `kubectl`
 
 ### `kubectl get`
@@ -730,7 +768,7 @@ spec:
 
 #### ClusterIP
 
-Exposes the service on a cluster-internal IP. Makes this only reachable from within the cluster. This is the default `ServiceType`.
+Exposes the service on a cluster-internal IP. Makes this only reachable from within the cluster. This is the default `ServiceType` .
 
 ```yaml
 apiVersion: v1
@@ -773,11 +811,12 @@ status:
 
 Sample imperative command for creating a service to expose `simple-webapp-deployment` on port 8080 (will need to configure `nodePort` in the yaml definition):
 
-`kubectl expose deployment simple-webapp-deployment --name=webapp-service --target-port=8080 --type=NodePort --port=8080 --dry-run=client -o yaml`
+ `kubectl expose deployment simple-webapp-deployment --name=webapp-service --target-port=8080 --type=NodePort --port=8080 --dry-run=client -o yaml`
 
 Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
 
-`kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml`
+ `kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml`
+
 (This will automatically use the pod's labels as selectors)
 
 Or
@@ -786,13 +825,13 @@ Or
 
 Create a Service named nginx of type NodePort to expose pod nginx's port 80 on port 30080 on the nodes:
 
-`kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml`
+ `kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml`
 
 (This will automatically use the pod's labels as selectors, but you cannot specify the node port. You have to generate a definition file and then add the node port in manually before creating the service with the pod.)
 
 Or
 
-`kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml`
+ `kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml`
 
 (This will not use the pods labels as selectors)
 
@@ -800,7 +839,7 @@ Both the above commands have their own challenges. While one of it cannot accept
 
 Can use `--expose` within pod create command to automatically create a service:
 
-`kubectl run <pod-name> --image=httpd:alpine --port=80 --expose --dry-run=client -o yaml`
+ `kubectl run <pod-name> --image=httpd:alpine --port=80 --expose --dry-run=client -o yaml`
 
 # Pods and Containers
 
@@ -1104,6 +1143,8 @@ Use cases:
 * Perform sensitive startup steps securely outside of app containers. e.g. steps to run only during startup, like a password or secret. If main app container is comprimised, then sensitive data won't be. 
 * Populate data into a shared volume
 * Communicate with another service. e.g register pod with external service. 
+* 
+
 # Advanced Pod Allocation
 
 ## Exploring K8s Scheduling
@@ -1112,6 +1153,45 @@ References:
 [K8s Scheduler](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/)
 [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
 [Lesson Reference](assets/k8s_scheduling.pdf)
+
+### Taints and Tolerations
+
+[Taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) allow a node to repel a set of pods.
+
+These work together to ensure that pods are not scheduled onto inappropriate nodes.
+
+**Taints** are set on **nodes**
+**Tolerations** are set on **pods**
+
+"the pod cannot **tolerate** the **taint** of the node"
+
+`taint-effect` is what happens to the pods that DO NOT TOLERATE the taint
+
+Three kinda of `effects` :
+* `NoSchedule` - no pod will be able to schedule onto the node unless it has a matching toleration
+* `PreferNoSchedule` -  the system will try to avoid placing a pod that does not tolerate the taint on the node, but it is not required 
+* `NoExecute` - no pod will be able to schedule onto the node unless it has a matching toleration any existing that do not tolerate the taint will be evicted
+
+Example kubectl command: `kubectl taint nodes node1 app=blue:NoSchedule`
+
+Equivalent pod definition file:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+  tolerations:
+    # IMPORTANT: the values below need to be encoded in double quotes
+  - key: "app"
+    operator: "Equal"
+    value: "blue"
+    effect: "NoSchedule"
+```
 
 ### Scheduling process
 
@@ -1123,9 +1203,11 @@ The K8s node selects a suitable Node for each Pod. Takes into account:
 
 You can configure a `nodeSelector` for your Pods to limit which Node(s) the Pod can be scheduled on.
 
-Use labels to filter suitable nodes. Tells scheduler to only schedule services to nodes with the corresponding label
+Use labels to filter suitable nodes. Tells scheduler to only schedule services to nodes with the corresponding label.
 
-To show node labels: `kubectl get nodes|pods|whatever --show-labels` or show resources by label: `kubectl get nodes|pods|whatever -l mylabelname`
+Cannot use operators like `OR` and `NOT` with `nodeSelector` , that's where [node affinity](#node-affinity) comes in. It has more advanced capabilities.
+
+To show  labels: `kubectl get nodes|pods|whatever --show-labels` or show resources by label: `kubectl get nodes|pods|whatever -l mylabelname`
 
 Example:
 
@@ -1215,6 +1297,63 @@ Kubelet will create a mirror Pod for each static pod. Mirror Pods allow you to s
 
 Essentially a ghost representation of the static pod in the K8s API that aloow you to view but not change it. 
 
+## Node Affinity
+
+[Node affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) is conceptually similar to `nodeSelector` , allowing you to constrain which nodes your Pod can be scheduled on based on node labels. There are two types of node affinity:
+
+* `requiredDuringSchedulingIgnoredDuringExecution`: The scheduler can't schedule the Pod unless the rule is met. This functions like [nodeSelector](#nodeselector), but with a more expressive syntax.
+* `preferredDuringSchedulingIgnoredDuringExecution`: The scheduler tries to find a node that meets the rule. If a matching node is not available, the scheduler still schedules the Pod.
+
+`Scheduling`: when pod is provisioned
+`Execution`: while pod is already running on node
+
+Sample yaml in the hyperlink above with more explanation.
+
+Example to match nodes that do not contain the `size=Small` label:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-node-affinity
+spec:
+  containers:
+  - name: with-node-affinity
+    image: k8s.gcr.io/pause:2.0
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: NotIn
+            values:
+            - Small
+```
+
+Example to schedule to nodes that have the `size=Medium` or `size=Large` label:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-node-affinity
+spec:
+  containers:
+  - name: with-node-affinity
+    image: k8s.gcr.io/pause:2.0
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In
+            values:
+            - Medium
+            - Large
+```
+
 # K8s Deployments Overview
 
 [Lesson reference](assets/deployments.pdf)
@@ -1293,7 +1432,7 @@ spec:
         app: myapp
         type: frontend
     spec:
-      containers: # remember that under containers is a list (noted by "-") because we can have multiple containers
+      containers: # remember that "-" denotes a list/array because we can have multiple containers
       - name: nginx-container
         image: nginx
   replicas: 3 #replicas go under top-level spec
