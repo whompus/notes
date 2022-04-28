@@ -920,6 +920,18 @@ Each top-level key in the configuration data will appear as a file containing al
 
 ## Managing container resources
 
+Memory notes, pay attention to, say, G vs. Gi:
+
+1 G (Gigabyte) = 1,000,000,000 bytes
+1 M (Megabyte) = 1,000,000 bytes
+1 K (Kilobyte) = 1,000
+
+1 Gi (Gibibyte) = 1,073,741,824 bytes
+1 Mi (Mebibyte) = 1,048,576 bytes
+1 Ki (Kibibyte) = 1,024 bytes
+
+Default resource requirements and limits for [memory](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/) and [cpu](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/) attached. And here is [assigning memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource).
+
 ### Resource requests
 
 [Resource requests](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) allow you to define an amount of resources (like CPU and mem) that a container can use or you expect it to use. The scheduler will then avoid scheduling pods on nodes that do not have the available resources. 
@@ -928,7 +940,7 @@ Example: if your resource request is asking for 5 gb of mem, and there isn't 5 g
 
 **NOTE:** containers are allowed to use more (or less) than the requested resources. *Resource requests only affect scheduling, not what happens after the pod is scheduled for a node*. Moreover, the resource request does not force the container to stay within that limit. 
 
-Example resource request:
+Example resource request, more on units [here](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes):
 
 ```yaml
 apiVersion: v1
@@ -939,6 +951,8 @@ spec:
   containers:
   - name: busybox
     image: busybox
+    ports:
+    - containerPort: 8080
     resources:
       requests:
         # CPU is measured in CPU units, which are 1/1000 of one CPU or 1/4 of a cpu
@@ -962,7 +976,7 @@ metadata:
   name: my-pod
 spec:
   containers:
-    name: busybox
+  - name: busybox
     image: busybox
     resources:
       limits:
@@ -1154,9 +1168,38 @@ References:
 [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
 [Lesson Reference](assets/k8s_scheduling.pdf)
 
+### Run multiple schedulers
+
+E.g. using a custom scheduler to schedule an app and have all other apps use the default scheduler. 
+
+[Doc on how to run multiple schedulers](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/).
+
+Download the binary, name the service to whatever (`my-custom-schduler.service`), and configure `--scheduler-name` in the options.
+
+Can also make a copy of `/etc/kubernetes/manifests/kube-scheduler.yaml` and under `command:` insert a custom name like `--scheduler-name=my-custom-scheduler`.
+
+Antoher thing to note is the `--leader-elect` option. This option is used when you have multiple copies of the scheuler running on different primary nodes, in a HA setup. If multiple copies of the scheduler are running on the differen nodes, only one scheduler can be active at a time. This option elects a leader to lead scheduling activites. You can set it to true or false. The `--lock-object-name=` option to differentiate the custom scheduler from the default scheduler in the leader election process. To create the pod, run the `kubectl apply -f /path/to/scheduler/manifest`.
+
+To schedule pods with this custom scheduler, use `schedulerName: my-custom-scheduler` in the pod definition (under `spec:`).
+
+to view logs: `kubectl logs my-custom-scheduler -n kube-system`
+
+to view events: `kubectl get events`
+
+### More advanced scheduling references:
+
+https://github.com/kubernetes/community/blob/master/contributors/devel/sig-scheduling/scheduling_code_hierarchy_overview.md
+
+https://kubernetes.io/blog/2017/03/advanced-scheduling-in-kubernetes/
+
+https://jvns.ca/blog/2017/07/27/how-does-the-kubernetes-scheduler-work/
+
+https://stackoverflow.com/questions/28857993/how-does-kubernetes-scheduler-work
+
 ### Taints and Tolerations
 
 [Taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) allow a node to repel a set of pods.
+ 
 
 These work together to ensure that pods are not scheduled onto inappropriate nodes.
 
@@ -1250,9 +1293,11 @@ Lesson Reference: [Using DaemonSets](assets/using_daemonsets.pdf)
 
 ### What is a DaemonSet?
 
-Automatically runs a copy of a Pod on each node.
+Automatically runs a copy of a Pod on each node. Useful for monitoring or networking, etc.
 
-Will also run a copy of the pod on new nodes as they are added to the cluster
+Will also run a copy of the pod on new nodes as they are added to the cluster.
+
+Uses `NodeAffinity` and default scheduler. To schedule pods on nodes
 
 ### Difference between DaemonSets and Scheduling
 
@@ -1289,7 +1334,19 @@ Managed directly but [kubelet](https://kubernetes.io/docs/reference/command-line
 
 Kubelet automatically creates static pods from YAML manifests located in the manifest path on the node. 
 
+Usually stored in `/etc/kubernetes/manifests`. Can see that by viewing `kubelet.service` in the `--pod-manifest-path` or view it in `kubeconfig.yaml` under `staticPodPath`.
+
+**IMPORTANT**: when trying to figure out where the pod is, look at the node that it is on. Generally ,the pod config will be somewhere on that node. You can check that by doing `ps -ef |  grep /usr/bin/kubelet` and looking for the congif location: `--config=/var/lib/kubelet/config.yaml`. Then you can `grep -i staticpod /var/lib/kubelet/config.yaml` to find the static pod config location. It doesn't necessaril;y need to be `/etc/kubernetes/manifests`, it can be another location. 
+
 [Lesson Reference](assets/using_static_pods.pdf)
+
+DaemonSets vs. Static Pods:
+
+Static pods created by the kubelet, DaemonSets created by the Kube-API server (DaemontSet controller)
+
+Static Pods deploy control plane components as Static Pods, while Daemonsets deploy monitoring Agents, logging agents on nodes.
+
+**Both ignored by kube-scheduler**
 
 ### Mirror Pods
 
