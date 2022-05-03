@@ -30,6 +30,7 @@
   - [RBAC](#rbac)
   - [Service accounts](#service-accounts)
   - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
+  - [Logging and Monitoring](#logging-and-monitoring)
   - [Services](#services)
 - [Pods and Containers](#pods-and-containers)
   - [Managing application configuration](#managing-application-configuration)
@@ -46,6 +47,10 @@
 - [K8s Deployments Overview](#k8s-deployments-overview)
   - [Use cases for deployments](#use-cases-for-deployments)
   - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
+- [Application Lifecycle Management](#application-lifecycle-management)
+  - [Updates and Rollbacks](#updates-and-rollbacks)
+  - [Configuring Applications](#configuring-applications)
+- [Security](#security)
 # Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
@@ -411,7 +416,13 @@ In our deployments, when we specify replicas, each replica should run on a diffe
 
 ## Upgrading K8s with `kubeadm`
 
-[Reference materials](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/_) from official documentation.
+Important to note: no component version should be higher than the kube api server.
+
+See [supported version skew](https://kubernetes.io/releases/version-skew-policy/#supported-version-skew) for more info.
+
+Only last three minor versions supported. If you are on 1.19 and 1.20 comes out, you should upgrade because when 1.22 is released, your current 1.19 version won't be supported anymore. **Upgrade one minor version at a time, do not jump from say 1.19 to 1.22**
+
+[Reference materials](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) from official documentation.
 
 ### Control plane upgrade steps
 
@@ -419,7 +430,6 @@ In our deployments, when we specify replicas, each replica should run on a diffe
  `kubectl drain k8s-control --ignore-daemonsets`
 
 2. Upgrade kubeadm on the control plane node
-   
 
 ```
 sudo apt-get update && \
@@ -429,7 +439,7 @@ sudo apt-get install -y --allow-change-held-packages kubeadm=1.22.2-00
 ```
 
 3. Plan the upgrade (`sudo kubeadm upgrade plan v1.22.2`)
-   * This command will give information about what will need to be changed in order to perform this upgrade 
+* This command will give information about what will need to be changed in order to perform this upgrade 
 4. Apply the upgrade (`sudo kubeadm upgrade apply v1.22.2`)
 5. Upgrade kubelet and kubectl on the control plane node
 
@@ -717,6 +727,10 @@ roleRef:
 
 [Resource metrics pipeline](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/)
 
+## Logging and Monitoring
+
+ `kubectl logs <object-name>`
+
 ### K8s Metrics Server
 
 In order to view metrics about the resources pods and containers are using, we need an add-on to collect and provide that data. One such add-on is the Kubernetes Metrics Server.
@@ -787,7 +801,7 @@ spec:
 
 #### LoadBalancer
 
-Exposes the Service externally using a cloud provider's load balancer. `NodePort` and `ClusterIP` Services, to whic hte LB routes, are automatically created.
+Exposes the Service externally using a cloud provider's load balancer. `NodePort` and `ClusterIP` Services, to which the LB routes, are automatically created.
 
 ```yaml
 apiVersion: v1
@@ -922,13 +936,13 @@ Each top-level key in the configuration data will appear as a file containing al
 
 Memory notes, pay attention to, say, G vs. Gi:
 
-1 G (Gigabyte) = 1,000,000,000 bytes
-1 M (Megabyte) = 1,000,000 bytes
-1 K (Kilobyte) = 1,000
+1 G (Gigabyte) = 1, 000, 000, 000 bytes
+1 M (Megabyte) = 1, 000, 000 bytes
+1 K (Kilobyte) = 1, 000
 
-1 Gi (Gibibyte) = 1,073,741,824 bytes
-1 Mi (Mebibyte) = 1,048,576 bytes
-1 Ki (Kibibyte) = 1,024 bytes
+1 Gi (Gibibyte) = 1, 073, 741, 824 bytes
+1 Mi (Mebibyte) = 1, 048, 576 bytes
+1 Ki (Kibibyte) = 1, 024 bytes
 
 Default resource requirements and limits for [memory](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/) and [cpu](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/) attached. And here is [assigning memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource).
 
@@ -1174,13 +1188,13 @@ E.g. using a custom scheduler to schedule an app and have all other apps use the
 
 [Doc on how to run multiple schedulers](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/).
 
-Download the binary, name the service to whatever (`my-custom-schduler.service`), and configure `--scheduler-name` in the options.
+Download the binary, name the service to whatever ( `my-custom-schduler.service` ), and configure `--scheduler-name` in the options.
 
-Can also make a copy of `/etc/kubernetes/manifests/kube-scheduler.yaml` and under `command:` insert a custom name like `--scheduler-name=my-custom-scheduler`.
+Can also make a copy of `/etc/kubernetes/manifests/kube-scheduler.yaml` and under `command:` insert a custom name like `--scheduler-name=my-custom-scheduler` .
 
-Antoher thing to note is the `--leader-elect` option. This option is used when you have multiple copies of the scheuler running on different primary nodes, in a HA setup. If multiple copies of the scheduler are running on the differen nodes, only one scheduler can be active at a time. This option elects a leader to lead scheduling activites. You can set it to true or false. The `--lock-object-name=` option to differentiate the custom scheduler from the default scheduler in the leader election process. To create the pod, run the `kubectl apply -f /path/to/scheduler/manifest`.
+Antoher thing to note is the `--leader-elect` option. This option is used when you have multiple copies of the scheuler running on different primary nodes, in a HA setup. If multiple copies of the scheduler are running on the differen nodes, only one scheduler can be active at a time. This option elects a leader to lead scheduling activites. You can set it to true or false. The `--lock-object-name=` option to differentiate the custom scheduler from the default scheduler in the leader election process. To create the pod, run the `kubectl apply -f /path/to/scheduler/manifest` .
 
-To schedule pods with this custom scheduler, use `schedulerName: my-custom-scheduler` in the pod definition (under `spec:`).
+To schedule pods with this custom scheduler, use `schedulerName: my-custom-scheduler` in the pod definition (under `spec:` ).
 
 to view logs: `kubectl logs my-custom-scheduler -n kube-system`
 
@@ -1334,9 +1348,9 @@ Managed directly but [kubelet](https://kubernetes.io/docs/reference/command-line
 
 Kubelet automatically creates static pods from YAML manifests located in the manifest path on the node. 
 
-Usually stored in `/etc/kubernetes/manifests`. Can see that by viewing `kubelet.service` in the `--pod-manifest-path` or view it in `kubeconfig.yaml` under `staticPodPath`.
+Usually stored in `/etc/kubernetes/manifests` . Can see that by viewing `kubelet.service` in the `--pod-manifest-path` or view it in `kubeconfig.yaml` under `staticPodPath` .
 
-**IMPORTANT**: when trying to figure out where the pod is, look at the node that it is on. Generally ,the pod config will be somewhere on that node. You can check that by doing `ps -ef |  grep /usr/bin/kubelet` and looking for the congif location: `--config=/var/lib/kubelet/config.yaml`. Then you can `grep -i staticpod /var/lib/kubelet/config.yaml` to find the static pod config location. It doesn't necessaril;y need to be `/etc/kubernetes/manifests`, it can be another location. 
+**IMPORTANT**: when trying to figure out where the pod is, look at the node that it is on. Generally , the pod config will be somewhere on that node. You can check that by doing `ps -ef |  grep /usr/bin/kubelet` and looking for the congif location: `--config=/var/lib/kubelet/config.yaml` . Then you can `grep -i staticpod /var/lib/kubelet/config.yaml` to find the static pod config location. It doesn't necessaril; y need to be `/etc/kubernetes/manifests` , it can be another location. 
 
 [Lesson Reference](assets/using_static_pods.pdf)
 
@@ -1361,8 +1375,8 @@ Essentially a ghost representation of the static pod in the K8s API that aloow y
 * `requiredDuringSchedulingIgnoredDuringExecution`: The scheduler can't schedule the Pod unless the rule is met. This functions like [nodeSelector](#nodeselector), but with a more expressive syntax.
 * `preferredDuringSchedulingIgnoredDuringExecution`: The scheduler tries to find a node that meets the rule. If a matching node is not available, the scheduler still schedules the Pod.
 
-`Scheduling`: when pod is provisioned
-`Execution`: while pod is already running on node
+`Scheduling` : when pod is provisioned
+`Execution` : while pod is already running on node
 
 Sample yaml in the hyperlink above with more explanation.
 
@@ -1497,3 +1511,235 @@ spec:
     matchLabels:
       type: front-end
 ```
+
+# Application Lifecycle Management
+
+## Updates and Rollbacks
+
+Rollouts and Versioning:
+
+When you first create a deployment, it triggers a rollout. A rollout creates a new deployment revision.
+
+When your app is updated, a new rollout is triggered and a new deployment revision is created. This helps us keep track of changes made to our deployment and enables us to rollback to a previous versin if necessary. 
+
+Rollouts: `kubectl rollout status deployment/myapp-deployment`
+
+Rollout history: `kubectl rollout history deployment/myapp-deployment`
+
+Rolling updates allow us to update our app without having to destory the whole thing and recreate. Limits downtime.
+
+The default strategy is rolling update.
+
+How to rollback:
+
+ `kubectl rollout undo deployment/myapp-deployment`
+
+Summary:
+
+Create: `kubectl create -f deployment-definition.yml`
+
+Get: `kubectl get deployments`
+
+Update: `kubectl apply -f deployment-definition.yml` and/or `kubectl set image deployment/myapp-deployment nginx=nginx:1.9.1`
+
+Status: `kubectl rollout status deployment/myapp-deployment` and/or `kubectl rollout history deployment/myapp-deployment`
+
+Rollback: `kubectl rollout undo deployment/myapp-deployment`
+
+## Configuring Applications
+
+Consists of:
+
+* Configuring [Commands and Arguments](https://www.bmc.com/blogs/docker-cmd-vs-entrypoint/) on applications
+* Configuring Environment Variables
+* Configuring secrets
+
+### Commands and Arguments for Pods
+
+Say we have a docker file that creates an ubuntu image to sleep for 10 seconds:
+
+```dockerfile
+FROM Ubuntu
+ENTRYPOINT ["sleep"]
+CMD ["5"]
+```
+
+And it takes the amount of seconds as a command line parameter: `docker run --name ubuntu-sleeper ubuntu-sleeper 10`
+
+To equate this docker run command to a pod definition file, we use the `args:` in our container spec to override the `CMD` command in our dockerfile.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-sleeper-pod
+spec:
+  containers:
+  - name: ubuntu-sleeper
+    image: ubuntu-sleeper
+    args: ["10"]
+```
+
+If we wanted to overwrite `ENRTYPOINT` in our pod definition, we add `command:` to our container spec:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-sleeper-pod
+spec:
+  containers:
+  - name: ubuntu-sleeper
+    image: ubuntu-sleeper
+    command: ["sleep2.0"]
+    args: ["10"]
+```
+
+The equivalent docker command would be `docker run --name ubuntu-sleeper --entrypoint sleep2.0 ubuntu-sleeper 10`
+
+### Environment Variables
+
+Sample yaml:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+    - containerPort: 8080
+    # An array of environment variables, noted with "-" before name
+    env:
+    - name: APP_COLOR
+      value: pink
+```
+
+Other ways of specifying env vars: 
+
+ `ConfigMap`
+
+```yaml
+env:
+- name: APP_COLOR
+  valueFrom: 
+    configMapKeyRef:
+```
+
+ `Secret`
+
+```yaml
+env:
+- name: APP_COLOR
+  valueFrom:
+    secretKeyRef:
+```
+
+### ConfigMaps
+
+Instead of housing all the env vars and some config within pod definitions themselves, we can manage it centrally using [config maps](https://kubernetes.io/docs/concepts/configuration/configmap/).
+
+Can create config maps using imperative and declarative commands. 
+
+Imperative:
+
+ `kubectl create configmap <config-name> --from-literal=<key>=<value>`
+
+Which equates to:
+
+ `kubectl create configmap app-config --from-literal=APP_COLOR=blue`
+
+or
+
+ `kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MOD=prod`
+
+Example simple definition file:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  APP_COLOR: blue
+  APP_MODE: prod
+```
+
+To inject into pod:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+    - containerPort: 8080
+    envFrom:
+    - configMapRef:
+      name: app-config # the name of the config map
+```
+
+### Secrets
+
+You can use [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) to pass sensitive info to your apps.
+
+Must be b64 encoded.
+
+Secrets will look something liek this when encoded:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_Host: bX1zcWw= #mysql
+  DB_User: cm0vdA== #root
+  DB_Password: cGFzd3JK #passwrd
+```
+
+Sample environment variable pod def:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-test-pod
+spec:
+  containers:
+    - name: test-container
+      image: k8s.gcr.io/busybox
+      command: [ "/bin/sh", "-c", "env" ]
+      envFrom:
+      - secretRef:
+          name: mysecret
+  restartPolicy: Never
+```
+
+Secrets are not encrypted, so it is not safer in that sense. However, some best practices around using secrets make it safer. As in best practices like:
+
+* Not checking-in secret object definition files to source code repositories.
+
+* [Enabling Encryption at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) for Secrets so they are stored encrypted in ETCD. 
+
+Also the way kubernetes handles secrets. Such as:
+
+A secret is only sent to a node if a pod on that node requires it.
+
+Kubelet stores the secret into a tmpfs so that the secret is not written to disk storage.
+
+Once the Pod that depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
+
+Read about the [protections](https://kubernetes.io/docs/concepts/configuration/secret/#protections) and [risks](https://kubernetes.io/docs/concepts/configuration/secret/#risks) of using secrets [here](https://kubernetes.io/docs/concepts/configuration/secret/#risks)
+
+Having said that, there are other better ways of handling sensitive data like passwords in Kubernetes, such as using tools like Helm Secrets, HashiCorp Vault. I hope to make a lecture on these in the future.
+
+# Security
