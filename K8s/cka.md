@@ -64,6 +64,7 @@
     - [Authorization](#authorization)
     - [Image Security](#image-security)
     - [Security Contexts](#security-contexts)
+    - [Network Policy](#network-policy)
 
 ## Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
@@ -1962,3 +1963,43 @@ spec:
 A [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) defines privilege and access control settings for a Pod or Container.
 
 You can also get more granular with [Linux Capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html), which grant certain privs to a process without granting all the privs of the root user. [More info here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container).
+
+### Network Policy
+
+If you want to control traffic flow at the IP address or port level (OSI layer 3 or 4), then you might consider using Kubernetes [NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) for particular applications in your cluster.
+
+[Example policy](https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+
+Match these to pods by using labels. Can be anything from pod labels to namespaces to ip addresses.
+
+Different rules are treated as an OR, for example a rule for a database pod to only accept incoming connections:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    # First Rule
+    - podSelector:
+      matchLabels:
+        name: api-pod
+      namespaceSelector:
+        matchLabels:
+          name: prod
+    # Second Rule
+    - ipBlock:
+      cidr: 192.168.5.10/32
+    ports:
+    - protocol: TCP
+      port: 3306
+```
+
+So if traffic from either rule are valid, traffic flows. In the first rule, both conditions need to be met.
