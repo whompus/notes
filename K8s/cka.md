@@ -51,6 +51,14 @@
   - [Updates and Rollbacks](#updates-and-rollbacks)
   - [Configuring Applications](#configuring-applications)
 - [Security](#security)
+  - [K8s security primitives](#k8s-security-primitives)
+  - [Authentication](#authentication)
+  - [TLS Basics](#tls-basics)
+  - [TLS in K8s](#tls-in-k8s)
+  - [Generating Certificates](#generating-certificates)
+  - [Viewing Certificates](#viewing-certificates)
+  - [Certificates API](#certificates-api)
+  - [Kubeconfig](#kubeconfig)
 # Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
@@ -652,7 +660,7 @@ You can often find YAML examples in the K8s documentation. You are allowed to us
 
 K8s objects that define a set of perms. These perms determine what users can do in the cluster. 
 
-A *Role* defines perms within a particular ns, and a *ClusterRol*e defines cluster-wide perms not specific to a single ns. RoleBindings are objects that link users to *Roles* and *ClusterRoleBindings* link users to cluster roles. 
+A *Role* defines perms within a particular ns, and a *ClusterRole* defines cluster-wide perms not specific to a single namespace. *RoleBindings* are objects that link users to *Roles* and *ClusterRoleBindings* link users to *ClusterRoles*. 
 
 *RoleBinding* and *ClusterRoleBinding* are objects that connect Roles and ClusterRoles to users. These determine which users are allowed to use the permissions that are defined in the role and cluster. 
 
@@ -1743,3 +1751,130 @@ Read about the [protections](https://kubernetes.io/docs/concepts/configuration/s
 Having said that, there are other better ways of handling sensitive data like passwords in Kubernetes, such as using tools like Helm Secrets, HashiCorp Vault. I hope to make a lecture on these in the future.
 
 # Security
+
+## K8s security primitives
+
+Passwordless auth/SSH-based authentication. 
+
+BAsically, securing the kube-apiserver is main goal and first line of defense. It is the heart of K8s and interacts with nearly everything. Through the API server, you can perform almost any action on the cluster.
+
+Who can access (Authentication) and what can they access (RBAC)?
+
+## Authentication
+
+See more in [RBAC](#rbac).
+
+BAsic types of Auth mechanisms to `kube-apiserver` :
+* Static password file (deprecated)
+Passed in as a CSV with password, username, userid, group(optional) to the api server with `--basic-auth-file=user-details.csv` in the `/etc/kubernetes/manifests/kube-apiserver.yaml` . This is not a recommended approach. Also suggest a `volumeMount` for the credential file.
+
+* Static Token file (deprecated)
+Same as above but with token instead of password.
+
+* Certificates
+* Identity services (e.g. LDAP)
+
+## TLS Basics
+
+Asymmetric Encryption: uses a private and public key to encrypt and descrypt data.
+
+Example:
+Bank website has a public key -> Sends public key to client accessing website > Client's browser encrypts their symmetric key with public key from bank's webserver; symmetric key is now secure and can't be stolen with someone sniffing network -> user's browser sends it back to server -> server decrypts symmetric key with the private key on the server and retireves that key
+
+Both clients now have symmetric keys that they can use to encrypt and decrypt data between each other.
+
+Private kes usually have `*.key` or `*-key.pem` in the name, while certs have `*.pem` or `*.crt` .
+
+## TLS in K8s
+
+Secure communication between servers.
+
+All client certs for clients, server certs for servers.
+
+All of the below have a certificate and key.
+
+Servers:
+* `kube-apiserver`
+
+* `etcd` server (only really need the key pair for the kube api server as it's the only one who communicates with this)
+* `kubelet` server exposes https endpoint for the kube api server to talk to the worker nodes
+
+Clients that access the above services:
+* Admins (us) who use kubectl or REST API
+* `kube-scheduler` is a client who access the kube api server
+* `kube-controller-manager` access the kube API much like we (admins) do
+* `kube-proxy`
+
+K8s requires at least one CA for the cluster to handle and verify certs.
+
+<img src="./assets/cert_flow.png" height="350">
+
+<img src="./assets/cert_group.png" height="350">
+
+## [Generating Certificates](https://kubernetes.io/docs/tasks/administer-cluster/certificates/)
+
+To generate a cert for an admin user:
+1. `openssl genrsa -out admin.key 2048`
+
+Below we mention the group in our CSR:
+2. `openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr`
+We can follow the same process for other users, inlduiong services, but the must be prefixed with `SYSTEM:`
+
+ 
+We can use the certificates in `kube-config.yaml` for authentication as well.
+
+All services and users need a copy of the Certificate Authority's pub key and root certificate.
+
+For kubelet, need a pair on each server running kubelet. Each kublet named after their node hostname.
+
+## Viewing Certificates
+
+In a cluster configured with `kubeadm` , All certs except kubelet certs appear to live in `/etc/kubernetes/pki/` .
+
+Kubelet certs live in `/var/lib/kubelet/`
+
+Information can be viewed with `openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text- noout`
+
+More on cert management [here](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/).
+
+## Certificates API
+
+This can be used to:
+1. Create CertificateSigningRequest Object
+2. Review Requests
+3. Approve Requests
+4. Share Certs to Users
+
+Typical flow:
+
+* User creates key with their name on it: `openssl genrsa -out jane.key 2048`
+* User creates a request (CSR): `openssl req -new -key jane.key -subj "/CN=jane" -out jane.csr`
+* Then creates a CSR Object using yaml like below or [something like this](https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#create-certificatesigningrequest):
+
+```yaml
+apiVerison: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: jane
+spec:
+  groups:
+  - system:authenticated
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+  request: # this is where the b64 encoded CSR goes
+    someb64encodedstring=
+```
+
+Useful command for outputting b64 correctly: `cat csr_file | base64 -w0`
+
+* Once the object is created, admin can run `kubectl get csr` to get csrs and then `kubectl certificate approve jane` to approve the csr
+
+Allcertificate operations are carried about by the Controller Manager
+
+## [Kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/#file-references)
+
+Located at `$HOME/.kube/config` .
+
+Can use different contexts, which use the existing credentials to determine what user you are going to use with what cluster. See [configurating access to multiple clusters](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
