@@ -1,65 +1,67 @@
-## CKA Notes and Study Materials
+# CKA Notes and Study Materials
 
-- [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
-- [Big-Picture Overview](#big-picture-overview)
-- [K8s Control Plane and Components](#k8s-control-plane-and-components)
-  - [kube-api-server](#kube-api-server)
-  - [etcd](#etcd)
-  - [kube-scheduler](#kube-scheduler)
-  - [kube-controller-manager](#kube-controller-manager)
-  - [cloud-controller-manager](#cloud-controller-manager)
-- [K8s Nodes](#k8s-nodes)
-  - [kubelet](#kubelet)
-  - [container runtime](#container-runtime)
-  - [kube-proxy](#kube-proxy)
-- [Building a K8s cluster](#building-a-k8s-cluster)
-  - [kubeadm](#kubeadm)
-- [Using Namespaces in K8s](#using-namespaces-in-k8s)
-- [K8s Management](#k8s-management)
-  - [Intro to K8s High-Availability (HA)](#intro-to-k8s-high-availability-ha)
-  - [Intro K8s Management Tools](#intro-k8s-management-tools)
-  - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
-  - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
-  - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
-- [K8s Object Management](#k8s-object-management)
-  - [Labels and Selectors](#labels-and-selectors)
-  - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
-  - [Imperative commands](#imperative-commands)
-  - [Quick sample YAML](#quick-sample-yaml)
-  - [Use the docs](#use-the-docs)
-  - [RBAC](#rbac)
-  - [Service accounts](#service-accounts)
-  - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
-  - [Logging and Monitoring](#logging-and-monitoring)
-  - [Services](#services)
-- [Pods and Containers](#pods-and-containers)
-  - [Managing application configuration](#managing-application-configuration)
-  - [Managing container resources](#managing-container-resources)
-  - [Monitor container health with probes](#monitor-container-health-with-probes)
-  - [Building Self-Healing Pods with Restart Policies](#building-self-healing-pods-with-restart-policies)
-  - [Creating Multi-Container Pods](#creating-multi-container-pods)
-  - [Init Containers](#init-containers)
-- [Advanced Pod Allocation](#advanced-pod-allocation)
-  - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
-  - [Using DaemonSets](#using-daemonsets)
-  - [Using Static Pods](#using-static-pods)
-  - [Node Affinity](#node-affinity)
-- [K8s Deployments Overview](#k8s-deployments-overview)
-  - [Use cases for deployments](#use-cases-for-deployments)
-  - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
-- [Application Lifecycle Management](#application-lifecycle-management)
-  - [Updates and Rollbacks](#updates-and-rollbacks)
-  - [Configuring Applications](#configuring-applications)
-- [Security](#security)
-  - [K8s security primitives](#k8s-security-primitives)
-  - [Authentication](#authentication)
-  - [TLS Basics](#tls-basics)
-  - [TLS in K8s](#tls-in-k8s)
-  - [Generating Certificates](#generating-certificates)
-  - [Viewing Certificates](#viewing-certificates)
-  - [Certificates API](#certificates-api)
-  - [Kubeconfig](#kubeconfig)
-# Helpful Stuff (resources, cheat sheets, etc. for exam)
+- [CKA Notes and Study Materials](#cka-notes-and-study-materials)
+  - [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
+  - [Big-Picture Overview](#big-picture-overview)
+  - [K8s Control Plane and Components](#k8s-control-plane-and-components)
+    - [kube-api-server](#kube-api-server)
+    - [etcd](#etcd)
+    - [kube-scheduler](#kube-scheduler)
+    - [kube-controller-manager](#kube-controller-manager)
+    - [cloud-controller-manager](#cloud-controller-manager)
+  - [K8s Nodes](#k8s-nodes)
+    - [kubelet](#kubelet)
+    - [container runtime](#container-runtime)
+    - [kube-proxy](#kube-proxy)
+  - [Building a K8s cluster](#building-a-k8s-cluster)
+    - [kubeadm](#kubeadm)
+  - [Using Namespaces in K8s](#using-namespaces-in-k8s)
+  - [K8s Management](#k8s-management)
+    - [Intro to K8s High-Availability (HA)](#intro-to-k8s-high-availability-ha)
+    - [Intro K8s Management Tools](#intro-k8s-management-tools)
+    - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
+    - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
+    - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
+  - [K8s Object Management](#k8s-object-management)
+    - [Labels and Selectors](#labels-and-selectors)
+    - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
+    - [Imperative commands](#imperative-commands)
+    - [Quick sample YAML](#quick-sample-yaml)
+    - [Use the docs](#use-the-docs)
+    - [RBAC](#rbac)
+    - [Service accounts](#service-accounts)
+    - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
+    - [Logging and Monitoring](#logging-and-monitoring)
+    - [Services](#services)
+  - [Pods and Containers](#pods-and-containers)
+    - [Managing application configuration](#managing-application-configuration)
+    - [Managing container resources](#managing-container-resources)
+    - [Monitor container health with probes](#monitor-container-health-with-probes)
+    - [Building Self-Healing Pods with Restart Policies](#building-self-healing-pods-with-restart-policies)
+    - [Creating Multi-Container Pods](#creating-multi-container-pods)
+    - [Init Containers](#init-containers)
+  - [Advanced Pod Allocation](#advanced-pod-allocation)
+    - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
+    - [Using DaemonSets](#using-daemonsets)
+    - [Using Static Pods](#using-static-pods)
+    - [Node Affinity](#node-affinity)
+  - [K8s Deployments Overview](#k8s-deployments-overview)
+    - [Use cases for deployments](#use-cases-for-deployments)
+    - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
+  - [Application Lifecycle Management](#application-lifecycle-management)
+    - [Updates and Rollbacks](#updates-and-rollbacks)
+    - [Configuring Applications](#configuring-applications)
+  - [Security](#security)
+    - [K8s security primitives](#k8s-security-primitives)
+    - [Authentication](#authentication)
+    - [TLS Basics](#tls-basics)
+    - [TLS in K8s](#tls-in-k8s)
+    - [Generating Certificates](#generating-certificates)
+    - [Viewing Certificates](#viewing-certificates)
+    - [Certificates API](#certificates-api)
+    - [Kubeconfig](#kubeconfig)
+
+## Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 * [Useful Aliases](https://betterprogramming.pub/useful-kubectl-aliases-that-will-speed-up-your-coding-54960185d10)
@@ -77,11 +79,11 @@ As soon as you enter the terminal run these commands
 
 Be **VERY** familiar with the kubectl cheat sheet and the reference docs. There are a lot of commands on both that will help you out tremendously if you know where to look.
 
-# Big-Picture Overview
+## Big-Picture Overview
 
 <img src="./assets/big_picture.png" height="400">
 
-# K8s Control Plane and Components
+## K8s Control Plane and Components
 
 The control plane is collection of multiple compnents resonsible for managing the cluster globally.
 
@@ -89,7 +91,7 @@ Individual control plane compnents can run on any machine in the cluster, but us
 
 <img src="./assets/control_plane.png" height="400">
 
-## kube-api-server
+### kube-api-server
 
 Frontend; serves the K8s API which is the primary interface to the control plane and cluster itself.
 
@@ -99,7 +101,7 @@ config lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`
 
 service config lives at `/etc/systemd/system/kube-apiserver.service`
 
-## etcd
+### etcd
 
 ETCD is a distributed reliable key-value store (unlike a traditional tabular/relational database with columns and rows.) that is simple, secure and fast.
 
@@ -111,7 +113,7 @@ Listens on port 2379 by default.
 
 When performing operations against the API, data is being read from and written to etcd.
 
-### etcd commands
+#### etcd commands
 
 Additional information about ETCDCTL Utility
 
@@ -158,7 +160,7 @@ So for the commands I showed in the previous video to work you must specify the 
 kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl get / --prefix --keys-only --limit=10 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt  --key /etc/kubernetes/pki/etcd/server.key" 
 ```
 
-## kube-scheduler
+### kube-scheduler
 
 Scheduling means selecting an available node in the cluster on which to run containers. **This does not place the pod on the node, kubelet does that**
 
@@ -166,7 +168,7 @@ When using the API, for example, to run a pod or container, kube-scheduler is th
 
 View kube-scheduler options - kubeadm: `/etc/kubernetes/manifests/kube-scheduler.yaml`
 
-## kube-controller-manager
+### kube-controller-manager
 
 Runs a collection of multiple controller utilities in a single process.
 
@@ -182,17 +184,17 @@ View kube-controller-manager options - kubeadm: `/etc/kubernetes/manifests/kube-
 
 Options are at: `/etc/systemd/system/kube-controller-manager.service`
 
-## cloud-controller-manager
+### cloud-controller-manager
 
 Provides an interface between K8s and various cloud platforms. Only used when using cloud-based resources alongside K8s.
 
-# K8s Nodes
+## K8s Nodes
 
 Machines where containers are run in the cluster.
 
 <img src="./assets/nodes.png" height="400">
 
-## kubelet
+### kubelet
 
 K8s agent that runs on each node. Communicates with the control plane. Basically manages containers on each node.
 
@@ -204,27 +206,27 @@ Handles process of reporting container status and other data about containers ba
 
 To check: `ps -aux | grep kubelet`
 
-## container runtime
+### container runtime
 
 Separate from K8s, not built in. Separate piece of software for actually running the containers.
 
 K8s supports multiple container runtime implementations including Docker and containerd.
 
-## [kube-proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
+### [kube-proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
 
 Network proxy, runs on each node and handles some tasks relating ot networking between containers and services in the cluster.
 
 Deployed as a daemonset so a pod is always deployed on each node in the cluster.
 
-# Building a K8s cluster
+## Building a K8s cluster
 
-## kubeadm
+### kubeadm
 
 Tool that will simplify the process of setting up our kubernetes cluster.
 
 [Building a Kubernetes Cluster](./assets/1623334133949-Building%20a%20Kubernetes%20Cluster.pdf)
 
-# Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
+## Using [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) in K8s
 
 Namespaces are essentially virtual clusters backed by the same physcial cluster. Kubernetes objects, such as pods and containers, live in namespaces. Namepsaces are a way to separate and organize objecs in your cluster.
 
@@ -264,9 +266,9 @@ metadata:
 
 Switch namespace (important for exam to be in the right NS): `kubectl config set-context $(kubectl config current-context) --namespace=dev` or `kubectl config set-context --current --namespace=dev`
 
-# K8s Management
+## K8s Management
 
-## Intro to K8s High-Availability (HA)
+### Intro to K8s High-Availability (HA)
 
 K8s facilitates HA applications, but you can also design the cluster itself to be HA. Need *multiple control plane nodes* to do this.
 
@@ -274,7 +276,7 @@ When using multiple control planes for HA, you will likely need to communicate w
 
 <img src="./assets/basic_ha.png" height="400">
 
-### Stacked etcd
+#### Stacked etcd
 
 <img src="./assets/stacked_etcd.png" height="400">
 
@@ -282,7 +284,7 @@ Runs on the same nodes as the rest of the control plane components. Design patte
 
 Each individual control plane nodes would have it's own etcd instance.
 
-### External etcd
+#### External etcd
 
 <img src="./assets/external_etcd.png" height="400">
 
@@ -290,37 +292,37 @@ Etcd lives on completely different servers than where we are running our normal 
 
 You can have any numver of K8s control plane instances and any number of etcd nodes. 
 
-## Intro K8s Management [Tools](https://kubernetes.io/docs/reference/tools/)
+### Intro K8s Management [Tools](https://kubernetes.io/docs/reference/tools/)
 
 There is a variety of management tools available for K8s. These tools interface with K8s to provide additional functionality. When using K8s, it is a good idea to be aware of some of these tools.
 
-### `kubectl`
+#### `kubectl`
 
 The official command line interface for K8s. It is the main method of interacting with K8s in the CKA.
 
-### `kubeadm`
+#### `kubeadm`
 
 Tool that allows you to quickly and easily create K8s clusters. Like setting up the control plane and worker nodes.
 
-### minikube
+#### minikube
 
 Allows for easy setup of a cluster with a single machine. Supports multi-nodes on local device.
 
-### [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
+#### [Helm](https://medium.com/prodopsio/a-6-minute-introduction-to-helm-ab5949bf425)
 
 Provides templating and package management system for K8s objects. You can use it to manage your own templates (known as charts). You can also download and use shared templates. 
 
-### Kompose
+#### Kompose
 
 Helps you translate Docker compase files into K8s objects.
 
-### Kustomize
+#### Kustomize
 
 A config mananagement tool for managing K8s object configs. 
 
-## Safely Draining a K8s Node
+### Safely Draining a K8s Node
 
-### What is draining?
+#### What is draining?
 
 When performing maintenance, you may sometimes need to remove a K8s node from service.
 
@@ -330,7 +332,7 @@ Diagram of drain process:
 
 <img src="./assets/kubectl_drain.png" height="400">
 
-### How to drain
+#### How to drain
 
 To drain a node, use the `kubectl drain` command, e.g. `kubectl drain <node name> --ignore-daemonsets`
 
@@ -414,7 +416,7 @@ deployment.apps "my-deployment" deleted
 
 Walkthrough: [Safely Draining a Node](./assets/safe_draining.pdf)
 
-#### Notes on Deployments
+##### Notes on Deployments
 
 `kubectl get pods -o wide` - the `-o wide` gives node information as well.
 
@@ -422,7 +424,7 @@ In our deployments, when we specify replicas, each replica should run on a diffe
 
 [Pods vs. Deployments](https://stackoverflow.com/questions/41325087/what-is-the-difference-between-a-pod-and-a-deployment)
 
-## Upgrading K8s with `kubeadm`
+### Upgrading K8s with `kubeadm`
 
 Important to note: no component version should be higher than the kube api server.
 
@@ -432,7 +434,7 @@ Only last three minor versions supported. If you are on 1.19 and 1.20 comes out,
 
 [Reference materials](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) from official documentation.
 
-### Control plane upgrade steps
+#### Control plane upgrade steps
 
 1. Drain the node
  `kubectl drain k8s-control --ignore-daemonsets`
@@ -442,7 +444,7 @@ Only last three minor versions supported. If you are on 1.19 and 1.20 comes out,
 ```
 sudo apt-get update && \
 
-# override that kubeadm is in in the hold status which prevents upgrades
+## override that kubeadm is in in the hold status which prevents upgrades
 sudo apt-get install -y --allow-change-held-packages kubeadm=1.22.2-00
 ```
 
@@ -459,7 +461,7 @@ sudo apt-get install -y --allow-change-held-packages kubelet=1.22.2-00 kubectl=1
 6. In case kubelete service had any changes, run `sudo systemctl daemon-reload` and `sudo systemctl restart kubelet`
 7. Uncordon the control plane node with `kubectl uncordon k8s-control`
 
-### Worker node upgrade steps
+#### Worker node upgrade steps
 
 1. Drain the node
 2. Upgrade kubeadm
@@ -469,23 +471,23 @@ sudo apt-get install -y --allow-change-held-packages kubelet=1.22.2-00 kubectl=1
 
 Steps found [here](./assets/upgrade_kubeadm.pdf)
 
-## Backup and restore etcd cluster data
+### Backup and restore etcd cluster data
 
 [Reference docs](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster)
 
-### Why back up etcd?
+#### Why back up etcd?
 
 `etcd` is the backend data storage solution for your kubernetes cluster. As such, all your Kubernetes objects, applications, and configurations are stored in etcd. 
 
 Therefore, you will likely want to be able to back up your cluster's data by backing up etcd. If your etcd data is lost, you'll have to rebuild all your k8s applications by hand.
 
-### Backing it up
+#### Backing it up
 
 We will back up data by using the `etcdctl` command line tool.
 
 Using `etcdctl snapshot save` command to back up the data. `ETCDCTL_API=3 etcdctl --endpoints $ENDPOINT snapshot save <filename>`
 
-### Restoring etcd
+#### Restoring etcd
 
 You can [restore](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster) etcd data from a backup using the `etcdctl snapshot restore` command. You will need to supply some additional parameters, as the restore operation creates a new logical cluster.
 
@@ -544,7 +546,7 @@ ETCDCTL_API=3 etcdctl get cluster.name \
 The returned value should be beebox.
 ```
 
-# K8s Object Management
+## K8s Object Management
 
 References for objects:
 
@@ -553,7 +555,7 @@ References for objects:
 
 You can also run `kubectl api-resources` to get all k8s objects.
 
-## Labels and Selectors
+### Labels and Selectors
 
 [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) are key value pairs to organize objects.
 
@@ -591,9 +593,9 @@ Clients such as tools and libraries can retireve this metadata.
 
 To label a node: `kubectl label nodes <node-name> <label-key>=<label-value>` e.g. `kubectl label nodes node1 size=Large`
 
-## Basic commands - working with `kubectl`
+### Basic commands - working with `kubectl`
 
-### `kubectl get`
+#### `kubectl get`
 
 Use kubectl get to list objects in the K8s cluster:
  `kubectl get <object type> <object name> -o <output> --sort-by <JSONPath> --selector <selector>`
@@ -602,7 +604,7 @@ Use kubectl get to list objects in the K8s cluster:
 * `--sort-by`: sort output using a JSONPath expression
 * `--selector`: filter results by [label](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
 
-### `kubectl create`
+#### `kubectl create`
 
 Used to create objects. Supply a YAML file with `-f` to create an object from a YAML descripto stored in a file. 
 
@@ -610,37 +612,37 @@ Used to create objects. Supply a YAML file with `-f` to create an object from a 
 
 If you attempt to create an object that already exists, an error will occur.
 
-### `kubectl apply`
+#### `kubectl apply`
 
 Similar to to `kubectl create` . However, if you use `kubectl apply` on and object that already exists, it will modify the existing object, if possible.
 
  `kubectl apply -f <file name>`
 
-### `kubectl delete`
+#### `kubectl delete`
 
 Deletes objects from the cluster.
 
  `kubectl delete <object type> <object name>`
 
-### `kubectl exec`
+#### `kubectl exec`
 
 Run commands inside containers. KLeep in mind that, in order for a command to succeed, the necessary software must exist within the container to run it. For toubleshooting and seeing what is going on inside your containers. use `-c` if your pod has multiple containers.
 
  `kubectl exec <pod name> -c <container name> -- <command>`
 
-### More on `kubectl`
+#### More on `kubectl`
 
 More info on [ `kubectl` operations](https://kubernetes.io/docs/reference/kubectl/overview/)
 
 And even more in depth [here](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-).
 
-## Imperative commands
+### Imperative commands
 
 So far, we've been using [*declarative*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/) commands which define objects using data structures such as YAML or JSON and using `kubectl create|apply` to instantiate those objects.
 
 Imperative commands define objects using kubectl commands and flags instead of yaml files, e.g. `kubectl create deployment my-deployment --image=nginx`
 
-## Quick sample YAML
+### Quick sample YAML
 
 Use the `--dry-run` flag to run an imperative command without creating an object. Combine it with `-o yaml` to quickly obtain a sample yaml file you can manipulate.
 
@@ -648,15 +650,15 @@ You can record a command with the `--record` flag. E.g. `kubectl scale deploymen
 
 Then, within the object after `kubectl describe <object>` you can see the command in the annotations. 
 
-## Use the docs
+### Use the docs
 
 You can often find YAML examples in the K8s documentation. You are allowed to use this documentation during the exam. Feel free to copy and paste example YAML and/or coammdns from the docs.
 
-## RBAC
+### RBAC
 
 [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) allows you to control what users are allowed to do and access in your cluster. E.g. allow devs to read metadat and logs from K8s pods but not make changes to them.
 
-### Roles and Cluster Roles
+#### Roles and Cluster Roles
 
 K8s objects that define a set of perms. These perms determine what users can do in the cluster. 
 
@@ -674,7 +676,7 @@ In our role file, `rules:` define what permissions are associated with a partocu
 
 In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
 
-### For hands-on lab:
+#### For hands-on lab:
 
 "Create a role called pod-reader. Provide it with read access to pods and container logs in the beebox-mobile namespace."
 
@@ -685,13 +687,13 @@ Solution:
 
 `kubectl apply -f` both, profit. 
 
-## Service accounts
+### Service accounts
 
 In K8s a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) is an account used by container processes within pods to authenticate with the K8s API.
 
 If your pods need to communicate with the k8s API, you can use service accounts to control their access.
 
-### Creating service accounts
+#### Creating service accounts
 
 A service account object can be created with some YAML just like any other k8s object:
 
@@ -727,7 +729,7 @@ roleRef:
 
 `kubectl describe sa my-serviceaccount` will describe the service account.
 
-## Inspecting Pod Resource Usage
+### Inspecting Pod Resource Usage
 
 [Tools for monitoring resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/)
 
@@ -735,11 +737,11 @@ roleRef:
 
 [Resource metrics pipeline](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-metrics-pipeline/)
 
-## Logging and Monitoring
+### Logging and Monitoring
 
  `kubectl logs <object-name>`
 
-### K8s Metrics Server
+#### K8s Metrics Server
 
 In order to view metrics about the resources pods and containers are using, we need an add-on to collect and provide that data. One such add-on is the Kubernetes Metrics Server.
 
@@ -754,7 +756,7 @@ Querying the metrics server API: `kubectl get --raw /apis/metrics.k8s.io`
 
 Can also check node CPU usage: `kubectl top node`
 
-## Services
+### Services
 
 Enable communications between various components between internal resources and external services. 
 
@@ -762,9 +764,9 @@ Helps us connect applications together with other applications or users. E.g. co
 
 Enable loose coupling between microservices in our application.
 
-### [Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+#### [Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
 
-#### NodePort
+##### NodePort
 
 Three ports involved: TargetPort (on the pod), Port (in the service), and NodePort (on the node)
 
@@ -788,7 +790,7 @@ spec:
     type: front-end
 ```
 
-#### ClusterIP
+##### ClusterIP
 
 Exposes the service on a cluster-internal IP. Makes this only reachable from within the cluster. This is the default `ServiceType` .
 
@@ -807,7 +809,7 @@ spec:
     type: back-end
 ```
 
-#### LoadBalancer
+##### LoadBalancer
 
 Exposes the Service externally using a cloud provider's load balancer. `NodePort` and `ClusterIP` Services, to which the LB routes, are automatically created.
 
@@ -863,7 +865,7 @@ Can use `--expose` within pod create command to automatically create a service:
 
  `kubectl run <pod-name> --image=httpd:alpine --port=80 --expose --dry-run=client -o yaml`
 
-# Pods and Containers
+## Pods and Containers
 
 Usually have a 1:1 pod:container relationship within your cluster.
 
@@ -908,7 +910,7 @@ spec:
     image: nginx
 ```
 
-## Managing application configuration
+### Managing application configuration
 
 When you are running apps in K8s, you may want to pass dynamic values to your applications at runtime to control how they behave. This is known as application configuration.
 
@@ -940,7 +942,7 @@ Each top-level key in the configuration data will appear as a file containing al
 
 [Hands-on demo](./assets/config_maps_and_secrets.pdf)
 
-## Managing container resources
+### Managing container resources
 
 Memory notes, pay attention to, say, G vs. Gi:
 
@@ -954,7 +956,7 @@ Memory notes, pay attention to, say, G vs. Gi:
 
 Default resource requirements and limits for [memory](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/) and [cpu](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/) attached. And here is [assigning memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource).
 
-### Resource requests
+#### Resource requests
 
 [Resource requests](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) allow you to define an amount of resources (like CPU and mem) that a container can use or you expect it to use. The scheduler will then avoid scheduling pods on nodes that do not have the available resources. 
 
@@ -983,7 +985,7 @@ spec:
         memory: "128Mi"
 ```
 
-### Resource limits
+#### Resource limits
 
 The container runtime is responsible for enforcing the [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) after scheduling, and different CRs do this differently.
 
@@ -1008,13 +1010,13 @@ spec:
 
 [Hands-on demo](./assets/resources_hands_on.pdf)
 
-## Monitor container health with [probes](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#types-of-probe)
+### Monitor container health with [probes](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#types-of-probe)
 
-### Container health
+#### Container health
 
 K8s provides a number of features that allow you to build robust apps, such as the ability to to automatically restart unhealthy containers. To make the most of those features, K8s needs to be able to accurately determine the status of your apps. This means actively monitoring container health. More in this in [pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
 
-### Liveness Probes
+#### Liveness Probes
 
 Allows you to automatically determine whether or not a container application is in a healthy state and/or running. If the liveness probe fails, the kubelet kills the container, and the container is subjected to its [restart policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). If a container does not provide a liveness probe, the default state is `Success`
 
@@ -1024,7 +1026,7 @@ Liveness probes allow us to customize this detection mechanism and make it more 
 
 Can turn the threshold down on delay and period so that it recovers quicker. 
 
-### Startup probes
+#### Startup probes
 
 Similar to liveness probes, but the difference is these run on startup and stop running once they succeed. Whereas liveness probes are constantly running and checking container status.
 
@@ -1032,7 +1034,7 @@ These check whether the application within the container has started. *All other
 
 If the startup probe fails, the kubelet kills the container and the container is subjected to its restart policy. If a container does not provide a startup probe, the default state is `Success`
 
-### Readiness probes
+#### Readiness probes
 
 Used to determine when a container is ready to accept requests. If the readiness probe fails, the endpoints controller removes the Pod's IP addess from the endpoints of all Services that match the Pod. 
 
@@ -1040,15 +1042,15 @@ When you have a service backed by multiple container endpoints, use traffic will
 
 The default state of readiness before the initial delay is `Failure` . If a container does not provide a readiness probe, the default state is Success.
 
-### [Check mechanisms](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#probe-check-methods)
+#### [Check mechanisms](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#probe-check-methods)
 
 These are ways to check containers using probes via different methods.
 
-### Demo 
+#### Demo 
 
 [Hands on demo for pod lifecycle and container Probes](./assets/probes_hands_on.pdf)
 
-## Building Self-Healing Pods with [Restart Policies](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy)
+### Building Self-Healing Pods with [Restart Policies](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy)
 
 [Hands on demo](./assets/restart-policies.pdf)
 
@@ -1056,7 +1058,7 @@ Restart policies allow you to automatically restart containers when they fail. T
 
 Able to define *when* or even *if* your containers should be auto-restarted. 
 
-### "Always" restart policy
+#### "Always" restart policy
 
 Always is the default policy in K8s. Containers will always be restarted if they stop, even if they completed successfully. 
 
@@ -1064,7 +1066,7 @@ _Use this policy for apps that should always be running._
 
 Basically if the container stop or becomes unhelthy, it will be restarted.
 
-### "OnFailure" restart policy
+#### "OnFailure" restart policy
 
 Will restart containers only if the container process exists with an error code or the container is determined to be unhealthy by a liveness probe. 
 
@@ -1108,7 +1110,7 @@ We see it does restart on failure:
 
 <img src="./assets/fail.png" height="200">
 
-### "Never" restart policy
+#### "Never" restart policy
 
 Essentially the opposite of the Always policy. Will never auto-restart pods. 
 
@@ -1129,7 +1131,7 @@ The pod does not restart:
 
 <img src="./assets/never-pod.png" height="100">
 
-## Creating Multi-Container Pods
+### Creating Multi-Container Pods
 
 Resources:
 * [Using Pods](https://kubernetes.io/docs/concepts/workloads/pods/#using-pods)
@@ -1137,7 +1139,7 @@ Resources:
 * [Patterns for Composite Containers](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/)
 * [Creating Multi-Container Pods (PDF)](assets/creating_multi_container_pods.pdf)
 
-### What is a multi-container pod?
+#### What is a multi-container pod?
 
 A K8s pod can have one or more containers. A Pod with more than one container is a multi-container pod.
 
@@ -1150,7 +1152,7 @@ Cross-container interaction is when containers sharing the same pod can interact
 * Network: containers share the same networking namespace and can communicate with one another on any port, even if that port is not exposed to the cluster.
 * Storage: containers can use shared volumes to share data in a pod
 
-### Why use a multi-container pod?
+#### Why use a multi-container pod?
 
 [More info](https://www.mirantis.com/blog/multi-container-pods-and-container-communication-in-kubernetes/)
 
@@ -1166,7 +1168,7 @@ You can add a sidecar container to the pod that reads the log file from a shared
 
 <img src="./assets/sidecar.png" height="300">
 
-## [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
+### [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
 
 [Reference material](assets/init_containers.pdf)
 
@@ -1181,16 +1183,16 @@ Use cases:
 * Communicate with another service. e.g register pod with external service. 
 * 
 
-# Advanced Pod Allocation
+## Advanced Pod Allocation
 
-## Exploring K8s Scheduling
+### Exploring K8s Scheduling
 
 References:
 [K8s Scheduler](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/)
 [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
 [Lesson Reference](assets/k8s_scheduling.pdf)
 
-### Run multiple schedulers
+#### Run multiple schedulers
 
 E.g. using a custom scheduler to schedule an app and have all other apps use the default scheduler. 
 
@@ -1208,7 +1210,7 @@ to view logs: `kubectl logs my-custom-scheduler -n kube-system`
 
 to view events: `kubectl get events`
 
-### More advanced scheduling references:
+#### More advanced scheduling references:
 
 https://github.com/kubernetes/community/blob/master/contributors/devel/sig-scheduling/scheduling_code_hierarchy_overview.md
 
@@ -1218,7 +1220,7 @@ https://jvns.ca/blog/2017/07/27/how-does-the-kubernetes-scheduler-work/
 
 https://stackoverflow.com/questions/28857993/how-does-kubernetes-scheduler-work
 
-### Taints and Tolerations
+#### Taints and Tolerations
 
 [Taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) allow a node to repel a set of pods.
  
@@ -1258,13 +1260,13 @@ spec:
     effect: "NoSchedule"
 ```
 
-### Scheduling process
+#### Scheduling process
 
 The K8s node selects a suitable Node for each Pod. Takes into account:
 * Resource requests vs. available node resources
 * Various configurations that affect scheduling using [node labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
 
-### `nodeSelector`
+#### `nodeSelector`
 
 You can configure a `nodeSelector` for your Pods to limit which Node(s) the Pod can be scheduled on.
 
@@ -1291,7 +1293,7 @@ spec:
 
 To validate a deplyoment like this to a selected node, we can use `kubectl get pod <pod-name> -o wide`
 
-### `nodeName`
+#### `nodeName`
 
 Can bypass scheduling entirely and assign directly to node.
 
@@ -1309,11 +1311,11 @@ spec:
   nodeName: k8s-worker1
 ```
 
-## Using [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
+### Using [DaemonSets](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
 
 Lesson Reference: [Using DaemonSets](assets/using_daemonsets.pdf)
 
-### What is a DaemonSet?
+#### What is a DaemonSet?
 
 Automatically runs a copy of a Pod on each node. Useful for monitoring or networking, etc.
 
@@ -1321,13 +1323,13 @@ Will also run a copy of the pod on new nodes as they are added to the cluster.
 
 Uses `NodeAffinity` and default scheduler. To schedule pods on nodes
 
-### Difference between DaemonSets and Scheduling
+#### Difference between DaemonSets and Scheduling
 
 DaemonSets respect normal scheduling rules around node labels, taints, and tolerations. 
 
 If a pod would not normally be scheduled on a node, a DaemonSet will not create a copy of the Pod on that Node. 
 
-### Sample DaemonSet
+#### Sample DaemonSet
 
  `my-daemonset.yml`
 
@@ -1350,7 +1352,7 @@ spec:
         image: nginx:1.19.1
 ```
 
-## Using [Static Pods](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/)
+### Using [Static Pods](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/)
 
 Managed directly but [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) on a node, and **_not_** by the the K8s API server. They can run even if there is no K8s API server present. 
 
@@ -1370,13 +1372,13 @@ Static Pods deploy control plane components as Static Pods, while Daemonsets dep
 
 **Both ignored by kube-scheduler**
 
-### Mirror Pods
+#### Mirror Pods
 
 Kubelet will create a mirror Pod for each static pod. Mirror Pods allow you to see the status of the static pod via the K8s API, but you cannot change or manage them via the API. 
 
 Essentially a ghost representation of the static pod in the K8s API that aloow you to view but not change it. 
 
-## Node Affinity
+### Node Affinity
 
 [Node affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) is conceptually similar to `nodeSelector` , allowing you to constrain which nodes your Pod can be scheduled on based on node labels. There are two types of node affinity:
 
@@ -1433,7 +1435,7 @@ spec:
             - Large
 ```
 
-# K8s Deployments Overview
+## K8s Deployments Overview
 
 [Lesson reference](assets/deployments.pdf)
 
@@ -1477,13 +1479,13 @@ spec:
         - containerPort: 80
 ```
 
-## Use cases for deployments
+### Use cases for deployments
 
 * Easily scale an application up or down by changing the number of replicas.
 * Perform rolling updates to deploy a new software version
 * Roll back to a previous software version
 
-## Replication Controllers vs. Replica Sets
+### Replication Controllers vs. Replica Sets
 
 Replication controllers are an older tech being replaced by ReplicaSets.
 
@@ -1520,9 +1522,9 @@ spec:
       type: front-end
 ```
 
-# Application Lifecycle Management
+## Application Lifecycle Management
 
-## Updates and Rollbacks
+### Updates and Rollbacks
 
 Rollouts and Versioning:
 
@@ -1554,7 +1556,7 @@ Status: `kubectl rollout status deployment/myapp-deployment` and/or `kubectl rol
 
 Rollback: `kubectl rollout undo deployment/myapp-deployment`
 
-## Configuring Applications
+### Configuring Applications
 
 Consists of:
 
@@ -1562,7 +1564,7 @@ Consists of:
 * Configuring Environment Variables
 * Configuring secrets
 
-### Commands and Arguments for Pods
+#### Commands and Arguments for Pods
 
 Say we have a docker file that creates an ubuntu image to sleep for 10 seconds:
 
@@ -1605,7 +1607,7 @@ spec:
 
 The equivalent docker command would be `docker run --name ubuntu-sleeper --entrypoint sleep2.0 ubuntu-sleeper 10`
 
-### Environment Variables
+#### Environment Variables
 
 Sample yaml:
 
@@ -1646,7 +1648,7 @@ env:
     secretKeyRef:
 ```
 
-### ConfigMaps
+#### ConfigMaps
 
 Instead of housing all the env vars and some config within pod definitions themselves, we can manage it centrally using [config maps](https://kubernetes.io/docs/concepts/configuration/configmap/).
 
@@ -1695,7 +1697,7 @@ spec:
       name: app-config # the name of the config map
 ```
 
-### Secrets
+#### Secrets
 
 You can use [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) to pass sensitive info to your apps.
 
@@ -1750,9 +1752,9 @@ Read about the [protections](https://kubernetes.io/docs/concepts/configuration/s
 
 Having said that, there are other better ways of handling sensitive data like passwords in Kubernetes, such as using tools like Helm Secrets, HashiCorp Vault. I hope to make a lecture on these in the future.
 
-# Security
+## Security
 
-## K8s security primitives
+### K8s security primitives
 
 Passwordless auth/SSH-based authentication. 
 
@@ -1760,7 +1762,7 @@ BAsically, securing the kube-apiserver is main goal and first line of defense. I
 
 Who can access (Authentication) and what can they access (RBAC)?
 
-## Authentication
+### Authentication
 
 See more in [RBAC](#rbac).
 
@@ -1774,7 +1776,7 @@ Same as above but with token instead of password.
 * Certificates
 * Identity services (e.g. LDAP)
 
-## TLS Basics
+### TLS Basics
 
 Asymmetric Encryption: uses a private and public key to encrypt and descrypt data.
 
@@ -1785,7 +1787,7 @@ Both clients now have symmetric keys that they can use to encrypt and decrypt da
 
 Private kes usually have `*.key` or `*-key.pem` in the name, while certs have `*.pem` or `*.crt` .
 
-## TLS in K8s
+### TLS in K8s
 
 Secure communication between servers.
 
@@ -1811,7 +1813,7 @@ K8s requires at least one CA for the cluster to handle and verify certs.
 
 <img src="./assets/cert_group.png" height="350">
 
-## [Generating Certificates](https://kubernetes.io/docs/tasks/administer-cluster/certificates/)
+### [Generating Certificates](https://kubernetes.io/docs/tasks/administer-cluster/certificates/)
 
 To generate a cert for an admin user:
 1. `openssl genrsa -out admin.key 2048`
@@ -1827,7 +1829,7 @@ All services and users need a copy of the Certificate Authority's pub key and ro
 
 For kubelet, need a pair on each server running kubelet. Each kublet named after their node hostname.
 
-## Viewing Certificates
+### Viewing Certificates
 
 In a cluster configured with `kubeadm` , All certs except kubelet certs appear to live in `/etc/kubernetes/pki/` .
 
@@ -1837,7 +1839,7 @@ Information can be viewed with `openssl x509 -in /etc/kubernetes/pki/apiserver.c
 
 More on cert management [here](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/).
 
-## Certificates API
+### Certificates API
 
 This can be used to:
 1. Create CertificateSigningRequest Object
@@ -1873,7 +1875,7 @@ Useful command for outputting b64 correctly: `cat csr_file | base64 -w0`
 
 Allcertificate operations are carried about by the Controller Manager
 
-## [Kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/#file-references)
+### [Kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/#file-references)
 
 Located at `$HOME/.kube/config` .
 
