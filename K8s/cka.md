@@ -60,6 +60,10 @@
     - [Viewing Certificates](#viewing-certificates)
     - [Certificates API](#certificates-api)
     - [Kubeconfig](#kubeconfig)
+    - [API Groups](#api-groups)
+    - [Authorization](#authorization)
+    - [Image Security](#image-security)
+    - [Security Contexts](#security-contexts)
 
 ## Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
@@ -662,7 +666,7 @@ You can often find YAML examples in the K8s documentation. You are allowed to us
 
 K8s objects that define a set of perms. These perms determine what users can do in the cluster. 
 
-A *Role* defines perms within a particular ns, and a *ClusterRole* defines cluster-wide perms not specific to a single namespace. *RoleBindings* are objects that link users to *Roles* and *ClusterRoleBindings* link users to *ClusterRoles*. 
+A **Role** defines perms that are namespace-scoped or within a namespace, and a **ClusterRole** defines *cluster-scoped* perms not specific to a single namespace. **RoleBindings** are objects that link users to **Roles** and **ClusterRoleBindings** link users to **ClusterRoles**. [More info here](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole).
 
 *RoleBinding* and *ClusterRoleBinding* are objects that connect Roles and ClusterRoles to users. These determine which users are allowed to use the permissions that are defined in the role and cluster. 
 
@@ -672,9 +676,33 @@ A *Role* defines perms within a particular ns, and a *ClusterRole* defines clust
 
 For roles, need both a `role` and `roleBinding` definition (in two separate files? # TODO fact-check this). same with cluster stuff. 
 
-In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:` , `verbs:` state what action can be done with the resource
+In our role file, `rules:` define what permissions are associated with a partocular role. Define a set of `resources:` , and `verbs:` state what action can be done with the resource
 
 In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
+
+You can check access by: `kubectl auth can-i create deployments` or `kubectl auth can-i delete nodes`.
+
+If you are an admin, you can check access for other users: `kubectl auth can-i create deployments --as dev-user` or `kubectl auth can-i create pods --as dev-user`
+
+With **Roles**, you can also refer to resources by name for certain requests through the `resourceNames` list. When specified, requests can be restricted to individual instances of a resource. Here is an example that restricts its subject to only `get` or `update` a ConfigMap named `my-configmap`:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: configmap-updater
+rules:
+- apiGroups: [""]
+  #
+  # at the HTTP level, the name of the resource for accessing ConfigMap
+  # objects is "configmaps"
+  resources: ["configmaps"]
+  resourceNames: ["my-configmap"]
+  verbs: ["update", "get"]
+```
+
+[More info here](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-resources).
 
 #### For hands-on lab:
 
@@ -692,6 +720,16 @@ Solution:
 In K8s a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) is an account used by container processes within pods to authenticate with the K8s API.
 
 If your pods need to communicate with the k8s API, you can use service accounts to control their access.
+
+Examples include a service account for Prometheus to query the API for metrics, or Jenkins to automatically deploy applications on the kubernetes cluster.
+
+Tokens are used by Service Accounts to authenticate against the API. Used as a bearer token. Example for external service: `curl https://192.168.56.70:6443/api -insecure --header "Authorization: Bearer <token>`
+
+What if our app is hosted on the cluster? Mount the service account token secret as a volume for the pod hosting the third-party application. That way, the secret is already inside the pod and can be easily read by the application.
+
+[Each namespace has it's own default service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#use-the-default-service-account-to-access-the-api-server). Whenever a pod is created, the default service account and its toekn are automatically mounted to that pod as a volume mount.
+
+Cannot edit the existing service account on a pod, you must destroy and recreate. Can edit the service account for deployment as a new rollout will be triggered. 
 
 #### Creating service accounts
 
@@ -1880,3 +1918,47 @@ Allcertificate operations are carried about by the Controller Manager
 Located at `$HOME/.kube/config` .
 
 Can use different contexts, which use the existing credentials to determine what user you are going to use with what cluster. See [configurating access to multiple clusters](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
+
+### API Groups
+
+We can query the cluster api directly, example here is getting the version: `curl https://kube-master:6443/version`, or to get al ist of pods: `curl https://kube-master:6443/api/v1/pods`.
+
+API endpoints in K8s are grouped logically.
+
+Can also view api resource with `kubectl api-resources -o wide`
+
+### Authorization
+
+[Types of authorization](https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules):
+
+* [Node Authorizer](https://kubernetes.io/docs/reference/access-authn-authz/node/)
+* [ABAC](https://kubernetes.io/docs/reference/access-authn-authz/abac/)
+* [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+* [Webhook](https://kubernetes.io/docs/reference/access-authn-authz/webhook/)
+
+### Image Security
+
+Private image repos provide more security because you control the images.
+
+Specify the full path of the image in your pod definition, and for credentials, need to pass to docker runtime on nodes by [creating a secret object](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#create-a-secret-by-providing-credentials-on-the-command-line)
+
+Then to get the secret:
+
+```yaml
+apiVersion: v1
+kind: pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx-pod
+    image: private-registry.io/apps/internal-app
+  imagePullSecrets:
+  - name: regcred #name of the secret here
+```
+
+### Security Contexts
+
+A [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) defines privilege and access control settings for a Pod or Container.
+
+You can also get more granular with [Linux Capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html), which grant certain privs to a process without granting all the privs of the root user. [More info here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container).
