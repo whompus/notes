@@ -65,6 +65,13 @@
     - [Image Security](#image-security)
     - [Security Contexts](#security-contexts)
     - [Network Policy](#network-policy)
+  - [Storage](#storage)
+    - [Docker Storage](#docker-storage)
+    - [Volumes](#volumes)
+    - [Persistent Volumes](#persistent-volumes)
+    - [Persistent Volume Claims](#persistent-volume-claims)
+    - [Differences between Volumes and Persistent Volumes](#differences-between-volumes-and-persistent-volumes)
+    - [Storage Class](#storage-class)
 
 ## Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
@@ -2003,3 +2010,116 @@ spec:
 ```
 
 So if traffic from either rule are valid, traffic flows. In the first rule, both conditions need to be met.
+
+## Storage
+
+Read about the different types of K8s storage [here](https://kubernetes.io/docs/concepts/storage/).
+
+### Docker Storage
+
+How docker stores data on the file system.
+
+By default, stores all data under `/var/lib/docker/`.
+
+Docker builds things in a [layered architecture](https://charith.xyz/docker/dockerfile-layered-architecture/). This means that each instruction in the dockerfile creates a new layer in the image with just the changes fro mthe previous layer.
+
+The advantages of this comes in the form of the docker cache. IF you have two similar images, docker will only build **new** layers and pull the rest from cache. Builds things faster and saves disk space. 
+
+When you build and image, docker creates read only layers that can only be modified by a new build. When you run the container, docker creates a new write layer for the container to store things aobut hte application like logs and other data. When this container is dleted, the layer is also deleted.
+
+If you want to allow the data in the read/write layer to persist, we use persistent [volumes](https://docs.docker.com/storage/volumes/). 
+
+Two types of mounts:
+* Bind - mounts a volume from anylocation on the docker host
+* Volume - mounts a volumes from the volumes directory
+
+Docker uses storage drivers in it's layered architecture and depends on it's underlying OS:
+* AUFS
+* ZFS
+* BTRFS
+* Device Mapper
+* Overlay
+* Overlay2
+
+[CSIs](https://kubernetes.io/blog/2019/01/15/container-storage-interface-ga/) are used to adapt to different storage providers.
+
+### Volumes
+
+To mount a volume for data to persist:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pd
+spec:
+  containers:
+  - image: k8s.gcr.io/test-webserver
+    name: test-container
+    volumeMounts:
+    - mountPath: /test-pd
+      name: test-volume
+  volumes:
+  - name: test-volume
+    hostPath:
+      # directory location on host
+      path: /data
+      # this field is optional
+      type: Directory
+```
+
+You can use [different types of volumes](https://kubernetes.io/docs/concepts/storage/volumes/#volume-types) depending on service.
+
+### Persistent Volumes
+
+[Persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) are a set of cluster-wide pool of volumes configured by an administrator to be used by users deploying apps on the cluster.
+
+### Persistent Volume Claims
+
+Users can select stroage from the volumes using [persistent volume claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims).
+
+A user creates a PV claim, K8s bind the PVs to claims based on the request and properties set on the volume. Every PV claim is bound to a single PV.
+
+When you delete a PVC, you can choose what needs to happen to the volume. By default, it is set to `Retain`, meaning the PV will remain until it is manually deleted by the admin. **It will not be availabel to use by any other claim**.
+
+You can also set it to `Recycle` wheere the data will be scrubbed before making it available again. `Delete` will dete the PV.
+
+Using PVCs in pods:
+
+Once you create a PVC use it in a POD definition file by specifying the PVC Claim name under persistentVolumeClaim section in the volumes section like this:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: mypd
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: myclaim
+```
+
+The same is true for ReplicaSets or Deployments. Add this to the **pod template** section of a Deployment on ReplicaSet.
+
+Reference URL: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes
+
+Important note: the `accessModes` for a persistent volume and persistent volume claim must match.
+
+### Differences between Volumes and Persistent Volumes
+
+[Volume](#volumes) decouples the storage from the Container. **Its lifecycle is coupled to a pod**. It enables safe container restarts and sharing data between containers in a pod.
+
+[Persistent Volume](#persistent-volumes) decouples the storage from the Pod. **Its lifecycle is independent**. It enables safe pod restarts and sharing data between pods.
+
+### Storage Class
+
+With [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/), you can dynamically provision storage on different providers like Google Cloud. 
+
+With these, we do not need a persistent volume definition or have to create persistent volumes, because the storage class will create it automatically.
