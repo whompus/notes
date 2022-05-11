@@ -72,6 +72,18 @@
     - [Persistent Volume Claims](#persistent-volume-claims)
     - [Differences between Volumes and Persistent Volumes](#differences-between-volumes-and-persistent-volumes)
     - [Storage Class](#storage-class)
+  - [Networking](#networking)
+    - [Network namespaces in Linux](#network-namespaces-in-linux)
+    - [Docker Networking](#docker-networking)
+    - [Container Networking Interface (CNI)](#container-networking-interface-cni)
+    - [Cluster Networking](#cluster-networking)
+    - [Pod Networking](#pod-networking)
+    - [CNI (Container Networking Interface) in Kubernetes](#cni-container-networking-interface-in-kubernetes)
+    - [Weave CNI walkthrough](#weave-cni-walkthrough)
+    - [IP address management in Weave](#ip-address-management-in-weave)
+    - [Service Networking](#service-networking)
+    - [DNS in K8s](#dns-in-k8s)
+    - [Ingress](#ingress)
 
 ## Helpful Stuff (resources, cheat sheets, etc. for exam)
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
@@ -2123,3 +2135,245 @@ Important note: the `accessModes` for a persistent volume and persistent volume 
 With [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/), you can dynamically provision storage on different providers like Google Cloud. 
 
 With these, we do not need a persistent volume definition or have to create persistent volumes, because the storage class will create it automatically.
+
+## Networking
+
+### Network namespaces in Linux
+
+We want to isolate containers, we do this by separating them into namespaces. The underlying host has visibility into everything though. 
+
+We can create [network namespaces](https://linuxhint.com/use-linux-network-namespace/) so that the container only gets access to what it needs. The container can have it's own interface, routing and arp tables. 
+
+To create a new network ns on a host, run `ip netns add <name-of-ns>`.
+
+To list interfaces on the host, run `ip link`
+
+To view interfaces in a network ns: `ip netns exec <name-of-network-ns> ip link` or `ip -n <name-of-network-ns> link`
+
+When we have more than 2 namespaces that need to talk with each other, we need to create a virtual network inside our host. [Example here](https://ops.tips/blog/using-network-namespaces-and-bridge-to-isolate-servers/).
+
+
+### Docker Networking
+
+Overview of drivers and tutorials on [Docker's website](https://docs.docker.com/network/).
+
+To view network config in docker: `docker network ls`.
+
+### Container Networking Interface (CNI)
+
+Set of standards that define how programs should be developed to solve networking challenges in a container runtime environment.
+
+More info [here](https://github.com/containernetworking/cni).
+
+We usually call the programs [plugins](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/).
+
+Docker doesn't natively use CNIs.
+
+### Cluster Networking
+
+[Cluster networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) is an important part of K8s so that the various components can talk to ech other.
+
+We will look at the networking on the primary and worker nodes in this section.
+
+Each node must have unique hostname, mac address, and ip address.
+
+Ports that need to be open are described in [this doc](https://kubernetes.io/docs/reference/ports-and-protocols/).
+
+### Pod Networking
+
+K8s does not ship with something to allow pod networking, you chave to implement with something like flannel or weave or calico. 
+
+Requirements:
+* Every pod should have a unique IP address
+* Every pod should be able to communicate eith every other pod in the same node
+* Every pod should be able to communicate with every other pod on other nodes without NAT
+
+### CNI (Container Networking Interface) in Kubernetes
+
+* Container runtime must create network namespace
+* Identify network the container must attach to
+* Container Runtime to invoke Network Plugin (bridge) when container is ADDed
+* Container Runtime to invoke Network Plugin (bridge) when container is DELeted
+* JSON format of the Network Configuration
+
+CNI configuration found in the kubelet service on each node in the cluster. Because the kubelet is responsible for creating and destroying containers.
+
+You can see this by running `ps -aux | grep kubelet` or looking at `kubelet.service`.
+
+`/opt/cni/bin` has all the supported cni plugins and their executables
+
+`/etc/cni/net.d` contains information for kubelet to find out which plugin needs to be used. 
+
+### Weave CNI walkthrough
+
+WE are using weave as an example, you can use any other plugin you'd like.
+
+Weave deploys an agent (peer) on each node. Each peer stores an entire topology of the setup, that way they know about the pods and the IPs on the other nodes.
+
+If a pod needs to talk to another pod on a different node, weave intercepts that packet and identifies that it's on a separate network.
+It then encapsualtes this packet into a new one with new source and destination and sends it across the network.
+Once it's on the other side, the weave agent on the recieving node retrievess the packet, decapsulates and routes it accordingly.
+
+Weave peers are deployed as a DaemonSet.
+
+### IP address management in Weave
+
+It is the responsibility of the CNI to take care of assigning IP to the containers.
+
+Weave allocates 10.32.0.0/12 by default for the entire network. The range is then 10.32.0.1 - 10.47.255.254.
+
+The ppers decide to split this range equally between the nodes, so it might look like one node with 10.32.0.1, another with 10.38.0.0 and another with 10.44.0.0. Pods created on the various nodes will have IPs in their respective range. We can customize these ranges past the default settings.
+
+### Service Networking
+
+[Documentation here](https://kubernetes.io/docs/concepts/services-networking/). 
+
+In the previous lectures, we talked about pod networking, how bridge networks are created within each node and how pods get a namespace created for them and how interfaces are attached to those namespaces, and how parts get an IP address assigned to them within the subnet assigned for that node.
+
+We can get the pods in defferent nodes to talk to each other, forming a large virtual network.
+
+Now, you'd rarely configure your pods to talk directly to each other. We would use [Services](#services) to allow the pods to talk to each other.
+
+When a service is created, it accessible from **all** parts of the cluster, irrespective of what nodes the pods are on. However, the service is only accessible from within the cluster. This type of service is known as [cluster IP](#clusterip). 
+To make a pod accessible outside the cluster, we create another service of type [NodePort](#nodeport). It exposes a port on all nodes for the external world to access the service.
+
+How does this all work from a clean slate?
+
+kubelet on each node watches the changes to the cluster via the kube-apiserver. When a new pdo is to be created, it creates that pod on the nodes. It then invokes the CNI plugin to configure networking for that pod. 
+
+Similarly, each node runs another component called [kube-proxy](https://kubernetes.io/docs/concepts/overview/components/#kube-proxy). kube-proxy watches to the changes in the cluster through the kube-apiserver, and every time a new service is to be created, kube-proxy gets into action. There really is not server or service listening on the IP of the service. 
+
+When we create a service object, it is assigned an IP fro ma predefined range. The kube-proxy component on each node gets that IP address and creates forwarding rules on each node. Any traffic coming to the IP of the service should go to the pod.
+
+How are these rules created? kube-proxy can use `userspace`, `iptables` (default), or `ipvs`. It can be set by using the `kube-proxy --proxy-mode` flag during creation or configuration.
+
+You can see ip ranges for services by `cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep cluster-ip-range`, the default is 10.0.0.0/24. Make sure your IP ranges dont overlap.
+
+### DNS in K8s
+
+K8s deploys a DNS server by default when you first stand up a cluster. 
+
+Whenever a service is created a DNS entry is created for that service.
+
+For each namespace the DNS server creates a subdomain., and then for each service, it creates an additional subdomain, so it would be "http://my-service.apps.svc" where "apps" is the name of the namespace and "svc" is the type, which is service. The FQDN would be "http://my-service.apps.svc.cluster.local" for a pod, it would be "http://my-pod.apps.pod.cluster.local"
+
+### Ingress
+
+An API object that manages external access to the services in a cluster, typically HTTP.
+
+[Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) may provide load balancing, SSL termination and name-based virtual hosting.
+
+For each service, you need a new load balancer, here's an example for different apps that are accessed over port 80: 
+
+<img src="./assets/port_80_lb.png" height="400">
+
+Also, enable SSL/TLS for your apps for users ot use https. Usually configured on the LB.
+
+Ingress allows for users to access a single url that will route to different services based on the configuration. It also provides a signel place to manage the above configurations, as well as SSL/TLS security.
+
+Think of ingress as a layer-7 load balancer built into the kubernetes cluster that can be configured using native kubernetesz primitives just like any other object in K8s.
+
+<img src="./assets/ingress_high_level.png" height="400">
+
+Moreover, even with ingress, you need to expose it to make it accessible outside the cluster. To make it accessible outside the cluster so you still have to either publish it as a node port or with a cloud native load balancer.
+But that is just a one time configuration. 
+Going forward, you are going to perform all your load balancing, Auth, SSL and URL based routing configurations on the Ingress controller.
+
+#### [Ingress controllers](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) 
+
+Can be Nginx, HAProxy, Traefik or other supported controllers. Not deployed by default.
+
+The controllers have additional intelligence built into them (more than a tpyical Load Balancer) to monitor the k8s cluster for new definitions or ingress resources and the configure accordingly.
+
+Controller are created as a deployment. You can also use a helm chart. Installation instructions [here](https://kubernetes.github.io/ingress-nginx/deploy/).
+
+Parts of the deployment:
+* A Service to expose it
+* A ConfigMap to feed nginx configuration data
+* A service account with permissions to access all these objects
+* 
+#### [Ingress Resources](https://jamesdefabia.github.io/docs/user-guide/ingress/#the-ingress-resource) 
+
+**NOTE**: Ingress resource uses `apiVersion: networking.k8s.io/v1`, example [here](https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/networking/minimal-ingress.yaml)
+
+Where the backend configuration happens. From the official docs [here](https://kubernetes.io/docs/concepts/services-networking/ingress/#the-ingress-resource). 
+
+Can route by path, or by subdomain:
+
+<img src="./assets/ingress_resource_routes.png" height="400">
+
+[Here's an ingress walkthrough using nginx](https://kubernetes.github.io/ingress-nginx/deploy/#local-testing). 
+
+#### Imperative commands for Ingress
+In K8s 1.20+, we can create an ingress resource imperatively like this: `kubectl create ingress <ingress-name> --rule="host/path=service:port"`
+
+Example: `kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"`
+
+Reference link: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-em-ingress-em-
+
+#### Ingress - Annotations and `rewrite-target`
+
+Different ingress controllers have different options that can be used to customise the way it works. NGINX Ingress controller has many options that can be seen [here](https://kubernetes.github.io/ingress-nginx/examples/). I would like to explain one such option that we will use in our labs. The [Rewrite](https://kubernetes.github.io/ingress-nginx/examples/rewrite/) target option.
+
+Our `watch` app displays the video streaming webpage at `http://<watch-service>:<port>/`
+
+Our `wear` app displays the apparel webpage at `http://<wear-service>:<port>/`
+
+We must configure Ingress to achieve the below. When user visits the URL on the left, his request should be forwarded internally to the URL on the right. Note that the /watch and /wear URL path are what we configure on the ingress controller so we can forwarded users to the appropriate application in the backend. The applications don't have this URL/Path configured on them:
+
+`http://<ingress-service>:<ingress-port>/watch` --> `http://<watch-service>:<port>/`
+
+`http://<ingress-service>:<ingress-port>/wear` --> `http://<wear-service>:<port>/`
+
+Without the `rewrite-target` option, this is what would happen:
+
+`http://<ingress-service>:<ingress-port>/watch` --> `http://<watch-service>:<port>/watch`
+
+`http://<ingress-service>:<ingress-port>/wear` --> `http://<wear-service>:<port>/wear`
+
+Notice `watch` and `wear` at the end of the target URLs. The target applications are not configured with `/watch` or `/wear` paths. They are different applications built specifically for their purpose, so they don't expect `/watch` or `/wear` in the URLs. And as such the requests would fail and throw a `404` not found error.
+
+To fix that we want to "ReWrite" the URL when the request is passed on to the watch or wear applications. We don't want to pass in the same path that user typed in. So we specify the `rewrite-target` option. This rewrites the URL by replacing whatever is under `rules->http->paths->path` which happens to be `/pay` in this case with the value in `rewrite-target`. This works just like a search and replace function.
+
+For example: `replace(path, rewrite-target)`
+In our case: `replace("/path","/")`
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: test-ingress
+    namespace: critical-space
+    annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+    rules:
+    - http:
+        paths:
+        - path: /pay
+        backend:
+            serviceName: pay-service
+            servicePort: 8282
+```
+
+In another example given [here](https://kubernetes.github.io/ingress-nginx/examples/rewrite/), this could also be:
+
+`replace("/something(/|$)(.*)", "/$2")`
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    name: rewrite
+    namespace: default
+spec:
+    rules:
+    - host: rewrite.bar.com
+    http:
+        paths:
+        - backend:
+            serviceName: http-svc
+            servicePort: 80
+        path: /something(/|$)(.*)
+```
