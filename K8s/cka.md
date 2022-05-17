@@ -1,5 +1,4 @@
 # CKA Notes and Study Materials
-
 - [CKA Notes and Study Materials](#cka-notes-and-study-materials)
   - [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
   - [Big-Picture Overview](#big-picture-overview)
@@ -84,8 +83,16 @@
     - [Service Networking](#service-networking)
     - [DNS in K8s](#dns-in-k8s)
     - [Ingress](#ingress)
+  - [Designing and Installing a Cluster](#designing-and-installing-a-cluster)
+  - [End-to-End testing (not on CKA anymore)](#end-to-end-testing-not-on-cka-anymore)
+  - [Troubleshooting](#troubleshooting)
+    - [Application failure](#application-failure)
+    - [Control Plane Failure](#control-plane-failure)
+    - [Worker Node Failure](#worker-node-failure)
+    - [Network Troubleshooting](#network-troubleshooting)
 
 ## Helpful Stuff (resources, cheat sheets, etc. for exam)
+
 * [Unofficial K8s Cheat Sheet](https://unofficial-kubernetes.readthedocs.io/en/latest/user-guide/kubectl-cheatsheet/?q=create+pod&check_keywords=yes&area=default)
 * [Official K8s Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 * [Useful Aliases](https://betterprogramming.pub/useful-kubectl-aliases-that-will-speed-up-your-coding-54960185d10)
@@ -469,6 +476,7 @@ Only last three minor versions supported. If you are on 1.19 and 1.20 comes out,
 sudo apt-get update && \
 
 ## override that kubeadm is in in the hold status which prevents upgrades
+
 sudo apt-get install -y --allow-change-held-packages kubeadm=1.22.2-00
 ```
 
@@ -700,11 +708,11 @@ In our role file, `rules:` define what permissions are associated with a partocu
 
 In our rolebinding file, `subjects:` defines what users this role binding applies to. `roleRef:` is what connects our role binding to the actual role. 
 
-You can check access by: `kubectl auth can-i create deployments` or `kubectl auth can-i delete nodes`.
+You can check access by: `kubectl auth can-i create deployments` or `kubectl auth can-i delete nodes` .
 
 If you are an admin, you can check access for other users: `kubectl auth can-i create deployments --as dev-user` or `kubectl auth can-i create pods --as dev-user`
 
-With **Roles**, you can also refer to resources by name for certain requests through the `resourceNames` list. When specified, requests can be restricted to individual instances of a resource. Here is an example that restricts its subject to only `get` or `update` a ConfigMap named `my-configmap`:
+With **Roles**, you can also refer to resources by name for certain requests through the `resourceNames` list. When specified, requests can be restricted to individual instances of a resource. Here is an example that restricts its subject to only `get` or `update` a ConfigMap named `my-configmap` :
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1941,7 +1949,7 @@ Can use different contexts, which use the existing credentials to determine what
 
 ### API Groups
 
-We can query the cluster api directly, example here is getting the version: `curl https://kube-master:6443/version`, or to get al ist of pods: `curl https://kube-master:6443/api/v1/pods`.
+We can query the cluster api directly, example here is getting the version: `curl https://kube-master:6443/version` , or to get al ist of pods: `curl https://kube-master:6443/api/v1/pods` .
 
 API endpoints in K8s are grouped logically.
 
@@ -2031,7 +2039,7 @@ Read about the different types of K8s storage [here](https://kubernetes.io/docs/
 
 How docker stores data on the file system.
 
-By default, stores all data under `/var/lib/docker/`.
+By default, stores all data under `/var/lib/docker/` .
 
 Docker builds things in a [layered architecture](https://charith.xyz/docker/dockerfile-layered-architecture/). This means that each instruction in the dockerfile creates a new layer in the image with just the changes fro mthe previous layer.
 
@@ -2092,7 +2100,7 @@ Users can select stroage from the volumes using [persistent volume claims](https
 
 A user creates a PV claim, K8s bind the PVs to claims based on the request and properties set on the volume. Every PV claim is bound to a single PV.
 
-When you delete a PVC, you can choose what needs to happen to the volume. By default, it is set to `Retain`, meaning the PV will remain until it is manually deleted by the admin. **It will not be availabel to use by any other claim**.
+When you delete a PVC, you can choose what needs to happen to the volume. By default, it is set to `Retain` , meaning the PV will remain until it is manually deleted by the admin. **It will not be availabel to use by any other claim**.
 
 You can also set it to `Recycle` wheere the data will be scrubbed before making it available again. `Delete` will dete the PV.
 
@@ -2144,7 +2152,7 @@ We want to isolate containers, we do this by separating them into namespaces. Th
 
 We can create [network namespaces](https://linuxhint.com/use-linux-network-namespace/) so that the container only gets access to what it needs. The container can have it's own interface, routing and arp tables. 
 
-To create a new network ns on a host, run `ip netns add <name-of-ns>`.
+To create a new network ns on a host, run `ip netns add <name-of-ns>` .
 
 To list interfaces on the host, run `ip link`
 
@@ -2152,12 +2160,11 @@ To view interfaces in a network ns: `ip netns exec <name-of-network-ns> ip link`
 
 When we have more than 2 namespaces that need to talk with each other, we need to create a virtual network inside our host. [Example here](https://ops.tips/blog/using-network-namespaces-and-bridge-to-isolate-servers/).
 
-
 ### Docker Networking
 
 Overview of drivers and tutorials on [Docker's website](https://docs.docker.com/network/).
 
-To view network config in docker: `docker network ls`.
+To view network config in docker: `docker network ls` .
 
 ### Container Networking Interface (CNI)
 
@@ -2198,7 +2205,7 @@ Requirements:
 
 CNI configuration found in the kubelet service on each node in the cluster. Because the kubelet is responsible for creating and destroying containers.
 
-You can see this by running `ps -aux | grep kubelet` or looking at `kubelet.service`.
+You can see this by running `ps -aux | grep kubelet` or looking at `kubelet.service` .
 
 `/opt/cni/bin` has all the supported cni plugins and their executables
 
@@ -2245,9 +2252,9 @@ Similarly, each node runs another component called [kube-proxy](https://kubernet
 
 When we create a service object, it is assigned an IP fro ma predefined range. The kube-proxy component on each node gets that IP address and creates forwarding rules on each node. Any traffic coming to the IP of the service should go to the pod.
 
-How are these rules created? kube-proxy can use `userspace`, `iptables` (default), or `ipvs`. It can be set by using the `kube-proxy --proxy-mode` flag during creation or configuration.
+How are these rules created? kube-proxy can use `userspace` , `iptables` (default), or `ipvs` . It can be set by using the `kube-proxy --proxy-mode` flag during creation or configuration.
 
-You can see ip ranges for services by `cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep cluster-ip-range`, the default is 10.0.0.0/24. Make sure your IP ranges dont overlap.
+You can see ip ranges for services by `cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep cluster-ip-range` , the default is 10.0.0.0/24. Make sure your IP ranges dont overlap.
 
 ### DNS in K8s
 
@@ -2292,9 +2299,10 @@ Parts of the deployment:
 * A ConfigMap to feed nginx configuration data
 * A service account with permissions to access all these objects
 * 
+
 #### [Ingress Resources](https://jamesdefabia.github.io/docs/user-guide/ingress/#the-ingress-resource) 
 
-**NOTE**: Ingress resource uses `apiVersion: networking.k8s.io/v1`, example [here](https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/networking/minimal-ingress.yaml)
+**NOTE**: Ingress resource uses `apiVersion: networking.k8s.io/v1` , example [here](https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/networking/minimal-ingress.yaml)
 
 Where the backend configuration happens. From the official docs [here](https://kubernetes.io/docs/concepts/services-networking/ingress/#the-ingress-resource). 
 
@@ -2305,6 +2313,7 @@ Can route by path, or by subdomain:
 [Here's an ingress walkthrough using nginx](https://kubernetes.github.io/ingress-nginx/deploy/#local-testing). 
 
 #### Imperative commands for Ingress
+
 In K8s 1.20+, we can create an ingress resource imperatively like this: `kubectl create ingress <ingress-name> --rule="host/path=service:port"`
 
 Example: `kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"`
@@ -2333,9 +2342,10 @@ Without the `rewrite-target` option, this is what would happen:
 
 Notice `watch` and `wear` at the end of the target URLs. The target applications are not configured with `/watch` or `/wear` paths. They are different applications built specifically for their purpose, so they don't expect `/watch` or `/wear` in the URLs. And as such the requests would fail and throw a `404` not found error.
 
-To fix that we want to "ReWrite" the URL when the request is passed on to the watch or wear applications. We don't want to pass in the same path that user typed in. So we specify the `rewrite-target` option. This rewrites the URL by replacing whatever is under `rules->http->paths->path` which happens to be `/pay` in this case with the value in `rewrite-target`. This works just like a search and replace function.
+To fix that we want to "ReWrite" the URL when the request is passed on to the watch or wear applications. We don't want to pass in the same path that user typed in. So we specify the `rewrite-target` option. This rewrites the URL by replacing whatever is under `rules->http->paths->path` which happens to be `/pay` in this case with the value in `rewrite-target` . This works just like a search and replace function.
 
 For example: `replace(path, rewrite-target)`
+
 In our case: `replace("/path","/")`
 
 ```yaml
@@ -2358,7 +2368,8 @@ spec:
 
 In another example given [here](https://kubernetes.github.io/ingress-nginx/examples/rewrite/), this could also be:
 
-`replace("/something(/|$)(.*)", "/$2")`
+ `replace("/something(/|$)(.*)", "/$2")`
+
 ```yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -2377,3 +2388,225 @@ spec:
             servicePort: 80
         path: /something(/|$)(.*)
 ```
+
+## Designing and Installing a Cluster
+
+Configuring HA for primary nodes consists of having at least 2 primary nodes.
+
+How do duplicate components work together?
+
+On each primary node, the `kube-api-server` can be running at the same time in an active-active mode.
+A load balancer in front of the primary nodes allows us to send requests to either primary node. And then we point `kubectl` toward the load balancer to send requests.
+
+In an active-standby approach, each primary node tries to become a leader through a leader election process.
+For example with `kube-controller-manager` , when it is configured, you may specify the `--leader-elect` option which by default is true.
+E.g.: `kube-controller-manager --leader-elect true [other options]`
+
+When this process starts, it tries to gain a lease or a lock on an endpoint object in k8s named as "kube-controller-manager endpoint". Whichever process on either primary node first updates the endpoint gains the lease and becomes the active or leader of the two.
+
+[An example of this process with pods](https://itnext.io/leader-election-in-kubernetes-using-client-go-a19cbe7a9a85).
+
+## End-to-End testing (not on CKA anymore)
+
+[Video here if interested](https://www.youtube.com/watch?v=-ovJrIIED88&list=PL2We04F3Y_41jYdadX55fdJplDvgNGENo&index=18).
+
+## Troubleshooting
+
+### Application failure
+
+#### Scenario: Two-tier web app with a database and web server
+
+DB pod is hosting a db and serving the web servers through the web service.
+The web server is hosted on a web pod and serves users through the web service.
+
+Usually helpful to diagram or write down how the app is configured.
+
+Users report issues with accessing the app.
+
+First, we start with frontend, we use standard ways of testing:
+* Check if the app is accessible on the IP of the node-port using curl: `curl http://web-service-ip:node-port`
+* Check the service, has it discovered endpoints for the web pod (look for endpoints)? `kubectl describe service web-service`
+  <img src="./assets/service-troubleshooting.png" height="200">
+  + In this case it did
+  + If it did not, you might want to check the service to pod discovery; compare the selectors configuredo n the service to ones on the pod, make sure they match
+* Next, check the `web` pod itself and make sure it's in a running state or if it's getting restarted
+* Check the `Events:` related to the pod with `describe`
+* Check logs of the app using `logs` command
+  + Be aware that the logs in the current version of the container may not reflect why it failed the last time
+  + So either follow the logs with `-f` of use the `--previous` option to view the logs of a previous pod: `kubectl logs web -f --previous`
+* Next, check the DB service as above and the db pod itself
+  + Check the logs of hte DB pod and look for any errors in the DB
+
+More info on troubleshooting in the [K8s docs](https://kubernetes.io/docs/tasks/debug/debug-application/).
+
+### Control Plane Failure
+
+* Check nodes, check pods
+* Check controlplane pods
+* Check status of services such as kube-apiserver, controller-manager and scheduler on primary nodes
+* Check kubelete and kube-proxy on worker nodes
+* Check logs of control plane components, view logs of pods hosting the control plane components
+* In the case of services configured natively on the primary nodes, view the service logs using the host's logging solution
+  + We could use `journalctl` to view the kube-apiservers logs: `sudo journalctl -u kube-apiserver`
+
+[More cluster troubleshooting docs](https://kubernetes.io/docs/tasks/debug/debug-cluster/)
+
+### Worker Node Failure
+
+* Check node status
+* Describe nodes: `kubectl describe node worker-1`
+  + Usually when things go wrong, the status is `Unknown`
+* Check if node is online
+* Check for memory and disk usage on each node using `top` or `df -h`
+* Check status of kubelet: `service kubelet status`
+  + `sudo journalctl -u kubelet`
+* Check `kubelet` certificates and make sure they are configured correctly
+
+### Network Troubleshooting
+
+Kubernetes uses CNI plugins to setup network. The kubelet is responsible for executing plugins as we mention the following parameters in kubelet configuration.
+
+* `cni-bin-dir`: Kubelet probes this directory for plugins on startup
+* `network-plugin`: The network plugin to use from cni-bin-dir. It must match the name reported by a plugin probed from the plugin directory. 
+
+3 CNIs to consider:
+
+* Weave Net:
+    To install, 
+
+ `kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"`
+
+    You can find this in following documentation: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+
+* Flannel:
+    To install, 
+
+ `kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml`
+
+    Note: As of now flannel does not support kubernetes network policies.
+
+* Calico :
+    To install, 
+
+ `curl https://docs.projectcalico.org/manifests/calico.yaml -O`
+
+    Apply the manifest using the following command.
+
+ `kubectl apply -f calico.yaml`
+
+   
+
+    Calico is said to have most advanced cni network plugin.
+
+    In CKA and CKAD exam, you won't be asked to install the cni plugin. But if asked you will be provided with the exact url to install it. If not, you can install weave net from the documentation 
+
+    https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+
+**Note: If there are multiple CNI configuration files in the directory, the kubelet uses the configuration file that comes first by name in lexicographic order.**
+
+As stated before, K8s uses CoreDNS for cluster DNS.
+
+#### Memory and Pods
+
+In large scale Kubernetes clusters, CoreDNS's memory usage is predominantly affected by the number of Pods and Services in the cluster. Other factors include the size of the filled DNS answer cache, and the rate of queries received (QPS) per CoreDNS instance.
+
+Kubernetes resources for coreDNS are:   
+
+* a [service account](#service-accounts) named `coredns`, 
+* [cluster-role](#roles-and-cluster-roles) named `coredns` and `kube-dns`
+* clusterrolebindings named `coredns` and `kube-dns`, 
+* a deployment named `coredns`, 
+* a [configmap](#configmaps) named `coredns`
+* [service](#services) named `kube-dns`.
+
+While analyzing the coreDNS deployment you can see that the the Corefile plugin consists of important configuration which is defined as a configmap.
+
+Port 53 is used for for DNS resolution.
+
+Below is the backend to k8s for `cluster.local` and reverse domains
+```
+kubernetes cluster.local in-addr.arpa ip6.arpa {
+    pods insecure
+    fallthrough in-addr.arpa ip6.arpa
+    ttl 30
+}
+```               
+
+Forward out of cluster domains directly to right authoritative DNS server:
+
+`proxy . /etc/resolv.conf`
+
+#### Troubleshooting issues related to coreDNS
+
+1. If you find CoreDNS pods in pending state first check network plugin is installed.
+
+2. coredns pods have CrashLoopBackOff or Error state
+    
+    If you have nodes that are running SELinux with an older version of Docker you might experience a scenario where the coredns pods are not starting. To solve that you can try one of the following options: 
+
+    1. Upgrade to a newer version of Docker.
+
+    2. Disable SELinux.
+
+    3. Modify the coredns deployment to set allowPrivilegeEscalation to true:
+        ```sh
+        $ kubectl -n kube-system get deployment coredns -o yaml | \
+            sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
+        $ kubectl apply -f -
+        ```
+    4. Another cause for CoreDNS to have CrashLoopBackOff is when a CoreDNS Pod deployed in Kubernetes detects a loop. There are many ways to work around this issue, some are listed here:
+       1. Add the following to your kubelet config yaml: `resolvConf: <path-to-your-real-resolv-conf-file>` This flag tells kubelet to pass an alternate `resolv.conf` to Pods. For systems using `systemd-resolved`, `/run/systemd/resolve/resolv.conf` is typically the location of the **"real"** `resolv.conf`, although this can be different depending on your distribution.
+       2. [Disable the local DNS cache on host nodes](https://tecadmin.net/disable-local-dns-caching-ubuntu/), and restore `/etc/resolv.conf` to the original.
+       3. A quick fix is to edit your **Corefile**, replacing `forward . /etc/resolv.conf` with the IP address of your upstream DNS, for example `forward . 8.8.8.8`. But this only fixes the issue for CoreDNS, `kubelet` will continue to forward the invalid `resolv.conf` to all default dnsPolicy Pods, leaving them unable to resolve DNS.
+3. If CoreDNS pods and the `kube-dns` service is working fine, check the `kube-dns` service has valid endpoints.
+
+`kubectl -n kube-system get ep kube-dns`
+
+If there are no endpoints for the service, inspect the service and make sure it uses the correct selectors and ports.
+
+#### Kube-Proxy
+
+`kube-proxy` is a network proxy that runs on each node in the cluster. `kube-proxy` maintains **network rules on nodes**. These network rules allow network communication to the Pods from network sessions inside or outside of the cluster.
+
+In a cluster configured with `kubeadm`, you can find `kube-proxy` as a **daemonset**. 
+
+`kubeproxy` is responsible for watching **services and endpoint associated with each service**. When the client is going to connect to the service using the virtual IP, the `kubeproxy` is responsible for **sending traffic to actual pods**. 
+
+If you run a `kubectl describe ds kube-proxy -n kube-system` you can see that the `kube-proxy` binary runs with following command inside the kube-proxy container:
+
+```yaml
+    Command:
+        /usr/local/bin/kube-proxy
+        --config=/var/lib/kube-proxy/config.conf
+        --hostname-override=$(NODE_NAME)
+```
+
+So it fetches the configuration from a configuration file, i.e. `/var/lib/kube-proxy/config.conf`, and we can override the hostname with the node name of at which the pod is running.
+
+In the config file we define the clusterCIDR, kubeproxy mode, ipvs, iptables, bindaddress, kube-config etc.
+
+#### Troubleshooting issues related to kube-proxy
+
+1. Check kube-proxy pod in the kube-system namespace is running.
+
+2. Check kube-proxy logs.
+
+3. Check configmap is correctly defined and the config file for running kube-proxy binary is correct.
+
+4. kube-config is defined in the config map.
+
+5. check kube-proxy is running inside the container:
+
+    ```bash
+    $ netstat -plan | grep kube-proxy
+    tcp        0      0 0.0.0.0:30081           0.0.0.0:*               LISTEN      1/kube-proxy
+    tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      1/kube-proxy
+    tcp        0      0 172.17.0.12:33706       172.17.0.12:6443        ESTABLISHED 1/kube-proxy
+    tcp6       0      0 :::10256                :::*                    LISTEN      1/kube-proxy
+    ```
+
+References:
+
+Debug Service issues: https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/
+
+DNS Troubleshooting: https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
