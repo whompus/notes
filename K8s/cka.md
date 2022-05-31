@@ -1803,16 +1803,13 @@ spec:
 Secrets are not encrypted, so it is not safer in that sense. However, some best practices around using secrets make it safer. As in best practices like:
 
 * Not checking-in secret object definition files to source code repositories.
-
 * [Enabling Encryption at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) for Secrets so they are stored encrypted in ETCD. 
 
 Also the way kubernetes handles secrets. Such as:
 
-A secret is only sent to a node if a pod on that node requires it.
-
-Kubelet stores the secret into a tmpfs so that the secret is not written to disk storage.
-
-Once the Pod that depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
+* A secret is only sent to a node if a pod on that node requires it.
+* Kubelet stores the secret into a tmpfs so that the secret is not written to disk storage.
+* Once the Pod that depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
 
 Read about the [protections](https://kubernetes.io/docs/concepts/configuration/secret/#protections) and [risks](https://kubernetes.io/docs/concepts/configuration/secret/#risks) of using secrets [here](https://kubernetes.io/docs/concepts/configuration/secret/#risks)
 
