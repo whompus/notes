@@ -1,27 +1,27 @@
 # CKA Notes and Study Materials
-- [CKA Notes and Study Materials](#cka-notes-and-study-materials)
-  - [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
-  - [Big-Picture Overview](#big-picture-overview)
-  - [K8s Control Plane and Components](#k8s-control-plane-and-components)
+* [CKA Notes and Study Materials](#cka-notes-and-study-materials)
+  + [Helpful Stuff (resources, cheat sheets, etc. for exam)](#helpful-stuff-resources-cheat-sheets-etc-for-exam)
+  + [Big-Picture Overview](#big-picture-overview)
+  + [K8s Control Plane and Components](#k8s-control-plane-and-components)
     - [kube-api-server](#kube-api-server)
     - [etcd](#etcd)
     - [kube-scheduler](#kube-scheduler)
     - [kube-controller-manager](#kube-controller-manager)
     - [cloud-controller-manager](#cloud-controller-manager)
-  - [K8s Nodes](#k8s-nodes)
+  + [K8s Nodes](#k8s-nodes)
     - [kubelet](#kubelet)
     - [container runtime](#container-runtime)
     - [kube-proxy](#kube-proxy)
-  - [Building a K8s cluster](#building-a-k8s-cluster)
+  + [Building a K8s cluster](#building-a-k8s-cluster)
     - [kubeadm](#kubeadm)
-  - [Using Namespaces in K8s](#using-namespaces-in-k8s)
-  - [K8s Management](#k8s-management)
+  + [Using Namespaces in K8s](#using-namespaces-in-k8s)
+  + [K8s Management](#k8s-management)
     - [Intro to K8s High-Availability (HA)](#intro-to-k8s-high-availability-ha)
     - [Intro K8s Management Tools](#intro-k8s-management-tools)
     - [Safely Draining a K8s Node](#safely-draining-a-k8s-node)
     - [Upgrading K8s with `kubeadm`](#upgrading-k8s-with-kubeadm)
     - [Backup and restore etcd cluster data](#backup-and-restore-etcd-cluster-data)
-  - [K8s Object Management](#k8s-object-management)
+  + [K8s Object Management](#k8s-object-management)
     - [Labels and Selectors](#labels-and-selectors)
     - [Basic commands - working with `kubectl`](#basic-commands---working-with-kubectl)
     - [Imperative commands](#imperative-commands)
@@ -32,25 +32,25 @@
     - [Inspecting Pod Resource Usage](#inspecting-pod-resource-usage)
     - [Logging and Monitoring](#logging-and-monitoring)
     - [Services](#services)
-  - [Pods and Containers](#pods-and-containers)
+  + [Pods and Containers](#pods-and-containers)
     - [Managing application configuration](#managing-application-configuration)
     - [Managing container resources](#managing-container-resources)
     - [Monitor container health with probes](#monitor-container-health-with-probes)
     - [Building Self-Healing Pods with Restart Policies](#building-self-healing-pods-with-restart-policies)
     - [Creating Multi-Container Pods](#creating-multi-container-pods)
     - [Init Containers](#init-containers)
-  - [Advanced Pod Allocation](#advanced-pod-allocation)
+  + [Advanced Pod Allocation](#advanced-pod-allocation)
     - [Exploring K8s Scheduling](#exploring-k8s-scheduling)
     - [Using DaemonSets](#using-daemonsets)
     - [Using Static Pods](#using-static-pods)
     - [Node Affinity](#node-affinity)
-  - [K8s Deployments Overview](#k8s-deployments-overview)
+  + [K8s Deployments Overview](#k8s-deployments-overview)
     - [Use cases for deployments](#use-cases-for-deployments)
     - [Replication Controllers vs. Replica Sets](#replication-controllers-vs-replica-sets)
-  - [Application Lifecycle Management](#application-lifecycle-management)
+  + [Application Lifecycle Management](#application-lifecycle-management)
     - [Updates and Rollbacks](#updates-and-rollbacks)
     - [Configuring Applications](#configuring-applications)
-  - [Security](#security)
+  + [Security](#security)
     - [K8s security primitives](#k8s-security-primitives)
     - [Authentication](#authentication)
     - [TLS Basics](#tls-basics)
@@ -64,14 +64,14 @@
     - [Image Security](#image-security)
     - [Security Contexts](#security-contexts)
     - [Network Policy](#network-policy)
-  - [Storage](#storage)
+  + [Storage](#storage)
     - [Docker Storage](#docker-storage)
     - [Volumes](#volumes)
     - [Persistent Volumes](#persistent-volumes)
     - [Persistent Volume Claims](#persistent-volume-claims)
     - [Differences between Volumes and Persistent Volumes](#differences-between-volumes-and-persistent-volumes)
     - [Storage Class](#storage-class)
-  - [Networking](#networking)
+  + [Networking](#networking)
     - [Network namespaces in Linux](#network-namespaces-in-linux)
     - [Docker Networking](#docker-networking)
     - [Container Networking Interface (CNI)](#container-networking-interface-cni)
@@ -83,9 +83,9 @@
     - [Service Networking](#service-networking)
     - [DNS in K8s](#dns-in-k8s)
     - [Ingress](#ingress)
-  - [Designing and Installing a Cluster](#designing-and-installing-a-cluster)
-  - [End-to-End testing (not on CKA anymore)](#end-to-end-testing-not-on-cka-anymore)
-  - [Troubleshooting](#troubleshooting)
+  + [Designing and Installing a Cluster](#designing-and-installing-a-cluster)
+  + [End-to-End testing (not on CKA anymore)](#end-to-end-testing-not-on-cka-anymore)
+  + [Troubleshooting](#troubleshooting)
     - [Application failure](#application-failure)
     - [Control Plane Failure](#control-plane-failure)
     - [Worker Node Failure](#worker-node-failure)
@@ -2521,6 +2521,7 @@ While analyzing the coreDNS deployment you can see that the the Corefile plugin 
 Port 53 is used for for DNS resolution.
 
 Below is the backend to k8s for `cluster.local` and reverse domains
+
 ```
 kubernetes cluster.local in-addr.arpa ip6.arpa {
     pods insecure
@@ -2551,13 +2552,15 @@ Forward out of cluster domains directly to right authoritative DNS server:
             sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
         $ kubectl apply -f -
         ```
+
     4. Another cause for CoreDNS to have CrashLoopBackOff is when a CoreDNS Pod deployed in Kubernetes detects a loop. There are many ways to work around this issue, some are listed here:
-       1. Add the following to your kubelet config yaml: `resolvConf: <path-to-your-real-resolv-conf-file>` This flag tells kubelet to pass an alternate `resolv.conf` to Pods. For systems using `systemd-resolved`, `/run/systemd/resolve/resolv.conf` is typically the location of the **"real"** `resolv.conf`, although this can be different depending on your distribution.
+       1. Add the following to your kubelet config yaml: `resolvConf: <path-to-your-real-resolv-conf-file>` This flag tells kubelet to pass an alternate `resolv.conf` to Pods. For systems using `systemd-resolved` , `/run/systemd/resolve/resolv.conf` is typically the location of the **"real"** `resolv.conf` , although this can be different depending on your distribution.
        2. [Disable the local DNS cache on host nodes](https://tecadmin.net/disable-local-dns-caching-ubuntu/), and restore `/etc/resolv.conf` to the original.
-       3. A quick fix is to edit your **Corefile**, replacing `forward . /etc/resolv.conf` with the IP address of your upstream DNS, for example `forward . 8.8.8.8`. But this only fixes the issue for CoreDNS, `kubelet` will continue to forward the invalid `resolv.conf` to all default dnsPolicy Pods, leaving them unable to resolve DNS.
+       3. A quick fix is to edit your **Corefile**, replacing `forward . /etc/resolv.conf` with the IP address of your upstream DNS, for example `forward . 8.8.8.8` . But this only fixes the issue for CoreDNS, `kubelet` will continue to forward the invalid `resolv.conf` to all default dnsPolicy Pods, leaving them unable to resolve DNS.
+
 3. If CoreDNS pods and the `kube-dns` service is working fine, check the `kube-dns` service has valid endpoints.
 
-`kubectl -n kube-system get ep kube-dns`
+ `kubectl -n kube-system get ep kube-dns`
 
 If there are no endpoints for the service, inspect the service and make sure it uses the correct selectors and ports.
 
@@ -2565,7 +2568,7 @@ If there are no endpoints for the service, inspect the service and make sure it 
 
 `kube-proxy` is a network proxy that runs on each node in the cluster. `kube-proxy` maintains **network rules on nodes**. These network rules allow network communication to the Pods from network sessions inside or outside of the cluster.
 
-In a cluster configured with `kubeadm`, you can find `kube-proxy` as a **daemonset**. 
+In a cluster configured with `kubeadm` , you can find `kube-proxy` as a **daemonset**. 
 
 `kubeproxy` is responsible for watching **services and endpoint associated with each service**. When the client is going to connect to the service using the virtual IP, the `kubeproxy` is responsible for **sending traffic to actual pods**. 
 
@@ -2578,7 +2581,7 @@ If you run a `kubectl describe ds kube-proxy -n kube-system` you can see that th
         --hostname-override=$(NODE_NAME)
 ```
 
-So it fetches the configuration from a configuration file, i.e. `/var/lib/kube-proxy/config.conf`, and we can override the hostname with the node name of at which the pod is running.
+So it fetches the configuration from a configuration file, i.e. `/var/lib/kube-proxy/config.conf` , and we can override the hostname with the node name of at which the pod is running.
 
 In the config file we define the clusterCIDR, kubeproxy mode, ipvs, iptables, bindaddress, kube-config etc.
 
@@ -2593,8 +2596,9 @@ In the config file we define the clusterCIDR, kubeproxy mode, ipvs, iptables, bi
 4. kube-config is defined in the config map.
 
 5. check kube-proxy is running inside the container:
+    
 
-    ```bash
+```bash
     $ netstat -plan | grep kube-proxy
     tcp        0      0 0.0.0.0:30081           0.0.0.0:*               LISTEN      1/kube-proxy
     tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      1/kube-proxy
