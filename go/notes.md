@@ -104,3 +104,39 @@ func main() {
 
 // Should print 50. Initialized empty var outside function
 ```
+
+## Basic Data Structures
+
+Array = Fixed length list of things
+Slice = An array that can grow or shrink
+
+Both must be defined with a data type.
+
+[More here](https://go.dev/blog/slices).
+
+How to declare:
+```go
+
+func main() {
+    // instatiate slice
+    cards := []string{"Ace of Diamonds", newCard()} 
+    
+    // append to slice
+    cards = append(cards, "Six of Spades")  
+    
+    // iterate over slice
+    for i, card := range cards {
+        fmt.Println(i, card)
+    }
+
+    // for indexOfThisElementinArray, currentCardWeAreIteratingOver := range cards {
+    //     fmt.Println(card)    
+    // }
+}
+
+func newCard() string {
+    return "Five of Diamonds"
+}
+```
+
+## Recievers
