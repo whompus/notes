@@ -51,9 +51,9 @@ Redunancy is good... in security
 * RBAC
 * Container sandboxing
 * Contianer hardening
-  * Attack surface
-  * Run as use
-  * readonly filesystem
+  + Attack surface
+  + Run as use
+  + readonly filesystem
 * Vuln scanning
 * [mTLS/ServiceMesh](https://techgenix.com/mtls-service-mesh/)
 
@@ -109,4 +109,46 @@ Container isolation:
 
 [cgroups](https://www.nginx.com/blog/what-are-namespaces-cgroups-how-do-they-work/#What-Are-cgroups) restrict the resource usage of processes like RAM, Disk and CPU.
 
-### Container tools
+### Container tools intro
+
+* Docker - container runtime + tool for managing containers and images
+* Containerd - container runtime
+* critctl - CLI for CRI-compatible container runtimes
+* [podman](https://podman.io/getting-started/) - tool for managing containers and images
+
+## Network Policies
+
+Default deny all to all pods:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: default
+spec:
+  podSelector: {} #this means ALL pods
+  policyTypes:
+    - Ingress
+    - Egress
+```
+
+[More info here.](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+
+Allow frontend pods to talk to backend:
+
+## Secure Ingress (Basically just TLS setup)
+
+### Recap
+
+<img src="./assets/ingress-recap.png" height="300">
+
+### Example ingress
+
+<img src="./assets/example-ingress.png" height="300">
+
+### TLS and ingress full setup
+
+https://github.com/killer-sh/cks-course-environment/tree/master/course-content/cluster-setup/secure-ingress
+
+## Node Metadata Protection
