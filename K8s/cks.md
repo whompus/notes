@@ -152,3 +152,164 @@ Allow frontend pods to talk to backend:
 https://github.com/killer-sh/cks-course-environment/tree/master/course-content/cluster-setup/secure-ingress
 
 ## Node Metadata Protection
+
+[EKS security best practices here.](https://aws.github.io/aws-eks-best-practices/security/docs/)
+
+### Cloud Platform Node Metadata
+
+* Metadata service API by default reachable from VMs
+* Can contain cloud credentials for VMs/Nodes
+* Can contain provisioning data like kubelet creds
+  
+Limit permissions for instance credentials
+* Ensure the cloud-instance-account has only the necessary perms
+* Each cloud provider has a set of recommendations to follow
+* Not in the hands of kubernetes
+
+Restrict access using NetworkPolicies
+ * Only allow certain pods to access metadata service, and deny others
+ * Example on [github](https://github.com/killer-sh/cks-course-environment/tree/master/course-content/cluster-setup/protect-node-metadata).
+
+You can play around with NetworkPolicies [here](https://editor.cilium.io/).
+
+## CIS Benchmarks
+
+Use CIS benchmarks to review secruity configuration.
+
+### What are CIS benchmarks?
+
+Center for Internet Security, provides best practices for the secure configuration of a target system.
+
+Covers more than 14 technology groups.
+
+[Download here](https://www.cisecurity.org/benchmark/kubernetes).
+
+## Cluster hardening - [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+[Good practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/).
+
+Always test your RBAC rules!
+
+### Accounts
+
+Service Accounts - there is a ServiceAccount resource managed by the K8s API
+
+Normal user - There is no K8s resource , it is assumed that a cluster-independent service manages normal users
+* A user us someone with a cert and key
+* If we have a client cert, it has to be signed by the K8s CA, and then the user has to be specified in the common name. 
+
+[More on Authorization here](https://github.com/whompus/notes/blob/master/K8s/cka.md#authentication).
+
+openssl create key -> create CSR ->send to API (use CertificateSigningRequest resource) -> CA signs cert via API -> user gets back a crt they can download to auth.
+
+### Users and Certs - Leak + Invalidation
+
+* No way to invalidate a cert.
+* If a cert has been leaked:
+  * Remove all access via RBAC
+  * Usernae cannot be used until cert expired.
+  * Create new CA and re-issue all certs
+
+### How to create a cert+key and authenitcate as user "jane" (demo)
+
+```bash
+# on local machine
+openssl genrsa -out jane.key 2048 # create key
+openssl req -new -key jane.key -out jane.csr # create CSR, only set Common Name = jane
+
+
+# create CertificateSigningRequest with base64 jane.csr
+https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests
+cat jane.csr | base64 -w 0 # paste value into "request" field in yaml
+
+# add new KUBECONFIG
+k config set-credentials jane --client-key=jane.key --client-certificate=jane.crt
+k config set-context jane --cluster=kubernetes --user=jane
+k config view
+k config get-contexts
+k config use-context jane
+```
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: # username
+spec:
+  request: # b64 enoded cert contents here
+  signerName: kubernetes.io/kube-apiserver-client
+  expirationSeconds: 86400  # one day
+  usages:
+  - client auth
+EOF
+```
+
+## Cluster Hardening - Excercise caution in using ServiceAccounts
+
+### Custom service account for pod
+
+When creating a service account, make sure perms aren't too broad. 
+
+If we create an account called "accessor" in the default ns, that token is visible and we can use that token to auth against the k8s api and do whatever we want.
+
+By default, when we attach a SA to a pod, that pod will be able to communicate with the K8s api:
+
+From inside a Pod we can do:
+
+```bash
+cat /run/secrets/kubernetes.io/serviceaccount/token
+
+curl https://kubernetes.default -k -H "Authorization: Bearer SA_TOKEN"
+
+# https://kubernetes.io/docs/tasks/run-application/access-api-from-pod
+
+# Bound Service Account Tokens
+https://github.com/kubernetes/enhancements/blob/master/keps/sig-auth/1205-bound-service-account-tokens/README.md
+```
+
+### Disable ServiceAccount mounting
+
+Disabling the mount of the ServiceAccount token in a Pod; **does my pod need to talk to the K8s API?**
+
+Answer to the above: most often not.
+
+More often thannot use the `automountServiceAccountToken: false` attribute in ServiceAccount definition file. 
+
+More info [here](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account).
+
+When setting that attribute, **every pods that uses this service account will not mount the token**.
+
+Also can do it on a pod-by-pod basis by setting the same attribute in the pod definition file.
+
+can check by creating the pod and moutnin the service account, then exec into the pod and running `mount | grep serv`.
+
+If you also do a `k edit podname`, you can scroll down to the volumes section and view that there is no volume specified for the service account.
+
+### Limit ServiceAccounts using RBAC
+
+Make service accounts per application instead of using default service account.
+
+If you mount service accounts to pods, restrict access using RBAC. 
+
+https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin
+
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account
+
+Priciple of least privilege.
+
+## Cluster Hardening - Restrict API Access
+
+In this section:
+* Authentication Authorization Admission
+* Connect to the API in different ways
+* Restrict access in various ways
+
+<img src="./assets/request-workflow.png" height="300">
+
+API requests are always tied to:
+* A normal user
+* A service account
+* Are treated as anonymous requests
+
+Every request must authenticate
