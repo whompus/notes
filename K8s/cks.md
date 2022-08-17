@@ -312,4 +312,144 @@ API requests are always tied to:
 * A service account
 * Are treated as anonymous requests
 
-Every request must authenticate
+Every request must authenticate.
+
+Some restrictions to consider:
+1. Don't allow anonymous access
+2. Close insecure ports
+3. Don't expose API Server to the outside
+4. Restrict access from Nodes to API (NodeRestriction o nthe admission controller)
+5. Prevent unauthorized access (RBAC)
+6. Prevent pods from accessing API
+7. ApiServer port behind firewall/allowed ip ranges (cloud provider)
+
+### Anonymous Access
+
+`kube-apiserver --anonymous-auth=true|false`
+
+In 1.6+ anon access is enabled by default
+* If authorization mode other than AlwaysAllow
+* But ABAC and RBAC require explicit authorization for anonymous; so not completely open and insecure 
+
+How to test anon access:
+* View api server config at `/etc/kubernetes/manifests/kube-apiserver.yaml`
+* Check for `--anonymous-auth=true|false` under kubeapi server params
+* `curl https://localhost:6443 -k` is also a test
+* Add `--anonymous access-auth=true|false` in the api server manifest
+
+### Insecure Access
+
+Via insecure port. Allows basically bypassing everything to access the API. will bypass authentication and authorization modules.
+
+If in `/etc/kubernetes/manifests/kube-apiserver.yaml` the insecure port flag is set to 0, it is disabled.
+
+### Manual API Request
+
+View kubeconfig certs and perform a manual API query.
+
+1. Get cert authority data from kubeconfig and decode from b64 and output to a file
+2. Same thing for client certificate data 
+3. Same for client key data
+4. Make note of the server address (it's a local IP)
+5. Use ab ove info to make base request `curl https://<server_address> --cacert <cert_authority_file> --cert <client_cert_data> --key <client_key_data_file>`
+
+### External APIserver Access
+
+Basically make the `kubernetes` service a nodeport and access via the external IP and nodeport.
+
+
+### [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) - [AdmissionController](https://sysdig.com/blog/kubernetes-admission-controllers/)
+
+in kube apiserver config, pass flag `--enable-admission-plugins=NodeRestriction`
+
+Limits what a kubelet can do:
+* Limits the Node labels a kubelet can modify; can only modify labels on it's own node and not other nodes.
+* Can only modify labels on pods running on itself or on the same node.
+* Enable secre workload isolation via labels
+  * No one can pretend to be a "secure" node and schedule secure pods
+
+Kubelet kind transforms an instance into a worker node and can communicate with the kubernetes API. 
+
+https://kubernetes.io/docs/concepts/security/controlling-access
+
+## Microservice Vulns - Manage K8s Secrets
+
+Basically dont store secrets in git. They should be decoupled from the depoyment workflow of applications.
+
+## ETCD Encryption
+
+Always [encrypt ETCD](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) at rest. So that TA cannot read plaintext ETCD.
+
+API Server should be the one responsible for encyrpting and decrypting content.
+
+I nthe above link, the provider sections **works in order**.
+
+First is used for encryption on save (on saving your resources).
+
+If you leave `identity: {}` as the first entry, secrets will not be encrypted.
+
+And example of ecrypting all secrets in ETCD:
+
+```yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aesgcm:
+          keys:
+            - name: key1
+              secret: c2VjcmV0IGlzIHNlY3VyZQ==
+            - name: key2
+              secret: dGhpcyBpcyBwYXNzd29yZA==
+      - identity: {}
+```
+
+Decrypt all secrets in ETCD:
+
+```yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      - identity: {}
+      - aesgcm:
+          keys:
+            - name: key1
+              secret: c2VjcmV0IGlzIHNlY3VyZQ==
+            - name: key2
+              secret: dGhpcyBpcyBwYXNzd29yZA==
+```
+
+[How to encrypt etcd data](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#encrypting-your-data).
+
+Note: this does not encrypt existing secrets, only newly created. to recreate all secrets: `kubectl get secret -A -o yaml | kubectl replace -f -`
+
+Another note: need to create volume mount and mount as hostpath.
+
+Read secrets from etcd:
+
+```bash
+# read secret from etcd
+ETCDCTL_API=3 etcdctl --cert /etc/kubernetes/pki/apiserver-etcd-client.crt --key /etc/kubernetes/pki/apiserver-etcd-client.key --cacert /etc/kubernetes/pki/etcd/ca.crt get /registry/secrets/default/very-secure
+```
+
+## Microservice Vulns - Cntainer Runtime Sandboxes
+
+"Containers are not contained" - Just because it runs in a container doesn't mean it's more protected.
+
+Kernel Group == cgroup
+
+Virtual machines have stronger isolation level than containers. cgroups are able to talk to each other by default
+
+### Sandbox
+
+Common implementations for sandboxes:
+* Playground when implementing API or similar
+* Simulated testing environment
+* Dev server
+
+What we are focused on: **Security layer to reduce attack surface**
