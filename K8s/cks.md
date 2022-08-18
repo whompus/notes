@@ -1,5 +1,49 @@
-# CKS Notes
-
+CKS Notes
+- [Best Practice](#best-practice)
+  - [Security principles](#security-principles)
+  - [K8s security categories](#k8s-security-categories)
+  - [K8s security best practices](#k8s-security-best-practices)
+- [K8s Secure Architecture](#k8s-secure-architecture)
+  - [Architecture](#architecture)
+  - [Components](#components)
+  - [Secure Component Communication](#secure-component-communication)
+- [Containers under the hood](#containers-under-the-hood)
+  - [Container](#container)
+  - [Kernel vs User Space](#kernel-vs-user-space)
+  - [Linux Kernel isolation](#linux-kernel-isolation)
+  - [Container tools intro](#container-tools-intro)
+- [Network Policies](#network-policies)
+- [Secure Ingress (Basically just TLS setup)](#secure-ingress-basically-just-tls-setup)
+  - [Recap](#recap)
+  - [Example ingress](#example-ingress)
+  - [TLS and ingress full setup](#tls-and-ingress-full-setup)
+- [Node Metadata Protection](#node-metadata-protection)
+  - [Cloud Platform Node Metadata](#cloud-platform-node-metadata)
+- [CIS Benchmarks](#cis-benchmarks)
+  - [What are CIS benchmarks?](#what-are-cis-benchmarks)
+- [Cluster hardening - RBAC](#cluster-hardening---rbac)
+  - [Accounts](#accounts)
+  - [Users and Certs - Leak + Invalidation](#users-and-certs---leak--invalidation)
+  - [How to create a cert+key and authenitcate as user "jane" (demo)](#how-to-create-a-certkey-and-authenitcate-as-user-jane-demo)
+- [Cluster Hardening - Excercise caution in using ServiceAccounts](#cluster-hardening---excercise-caution-in-using-serviceaccounts)
+  - [Custom service account for pod](#custom-service-account-for-pod)
+  - [Disable ServiceAccount mounting](#disable-serviceaccount-mounting)
+  - [Limit ServiceAccounts using RBAC](#limit-serviceaccounts-using-rbac)
+- [Cluster Hardening - Restrict API Access](#cluster-hardening---restrict-api-access)
+  - [Anonymous Access](#anonymous-access)
+  - [Insecure Access](#insecure-access)
+  - [Manual API Request](#manual-api-request)
+  - [External APIserver Access](#external-apiserver-access)
+  - [NodeRestriction and AdmissionController](#noderestriction-and-admissioncontroller)
+- [Microservice Vulns - Manage K8s Secrets](#microservice-vulns---manage-k8s-secrets)
+- [ETCD Encryption](#etcd-encryption)
+- [Microservice Vulns - Cntainer Runtime Sandboxes](#microservice-vulns---cntainer-runtime-sandboxes)
+  - [Sandbox](#sandbox)
+  - [OCI - Open Container Initiative](#oci---open-container-initiative)
+  - [katacontainers](#katacontainers)
+  - [gVisor](#gvisor)
+  - [Runtime class](#runtime-class)
+- [Security Contexts](#security-contexts)
 ## Best Practice
 
 ### Security principles
@@ -358,7 +402,11 @@ View kubeconfig certs and perform a manual API query.
 Basically make the `kubernetes` service a nodeport and access via the external IP and nodeport.
 
 
-### [NodeRestriction](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction) - [AdmissionController](https://sysdig.com/blog/kubernetes-admission-controllers/)
+### NodeRestriction and AdmissionController
+
+https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction
+
+https://sysdig.com/blog/kubernetes-admission-controllers/
 
 in kube apiserver config, pass flag `--enable-admission-plugins=NodeRestriction`
 
@@ -453,3 +501,63 @@ Common implementations for sandboxes:
 * Dev server
 
 What we are focused on: **Security layer to reduce attack surface**
+
+`strace` - shows what syscalls are made
+
+### OCI - Open Container Initiative
+
+[Linux Foundation project to design open standards for virtualizaion](https://opencontainers.org/)
+
+* Specification:
+  * runtime, image, distribution
+* Runtime
+  * runc (container runtime that implements their specification)
+
+In the early times, docker was tightly coupled with kubernetes. OCI allows kubelet to interact with different runtimes like crio-c, cri-containerd, etc.
+
+<img src="./assets/oci.png" height="300">
+
+
+### katacontainers
+
+[Documentation here.](https://katacontainers.io/)
+
+### gVisor
+
+User-space kernel for containers.
+
+* Adds another layer of separation
+* Not hypervisor/VM based
+* Simulates kernel syscalls with limited finctionailty
+* Runs in user-space spearated from linux kernel
+* Runtime called runsc
+
+<img src="./assets/gvisor.png" height="300">
+
+### Runtime class
+
+[K8s Docs](https://kubernetes.io/docs/concepts/containers/runtime-class/)
+
+[Example of Pod+RuntimeClass](https://github.com/killer-sh/cks-course-environment/blob/master/course-content/microservice-vulnerabilities/container-runtimes/gvisor/example.yaml)
+
+Intasllation of gvisor on worker node:
+
+```bash
+# IF THE INSTALL SCRIPT FAILS then you can try to change the URL= further down in the script from latest to a specific release
+
+bash <(curl -s https://raw.githubusercontent.com/killer-sh/cks-course-environment/master/course-content/microservice-vulnerabilities/container-runtimes/gvisor/install_gvisor.sh)
+```
+
+Container Runtime Landscape
+https://www.youtube.com/watch?v=RyXL1zOa8Bw
+
+Gvisor
+https://www.youtube.com/watch?v=kxUZ4lVFuVo
+
+Kata Containers
+https://www.youtube.com/watch?v=4gmLXyMeYWI
+
+## Security Contexts
+
+https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podsecuritycontext-v1-core
+
