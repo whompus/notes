@@ -44,6 +44,14 @@ CKS Notes
   - [gVisor](#gvisor)
   - [Runtime class](#runtime-class)
 - [Security Contexts](#security-contexts)
+  - [Force containers to run as non-root](#force-containers-to-run-as-non-root)
+  - [Privileged Containers](#privileged-containers)
+  - [PrivilegeEscalation](#privilegeescalation)
+  - [Pod Security Policies](#pod-security-policies)
+- [mTLS (Mutual TLS)](#mtls-mutual-tls)
+  - [mTLS pod to pod communication](#mtls-pod-to-pod-communication)
+  - [Service Meshes](#service-meshes)
+
 ## Best Practice
 
 ### Security principles
@@ -250,9 +258,9 @@ openssl create key -> create CSR ->send to API (use CertificateSigningRequest re
 
 * No way to invalidate a cert.
 * If a cert has been leaked:
-  * Remove all access via RBAC
-  * Usernae cannot be used until cert expired.
-  * Create new CA and re-issue all certs
+  + Remove all access via RBAC
+  + Usernae cannot be used until cert expired.
+  + Create new CA and re-issue all certs
 
 ### How to create a cert+key and authenitcate as user "jane" (demo)
 
@@ -260,7 +268,6 @@ openssl create key -> create CSR ->send to API (use CertificateSigningRequest re
 # on local machine
 openssl genrsa -out jane.key 2048 # create key
 openssl req -new -key jane.key -out jane.csr # create CSR, only set Common Name = jane
-
 
 # create CertificateSigningRequest with base64 jane.csr
 https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests
@@ -326,9 +333,9 @@ When setting that attribute, **every pods that uses this service account will no
 
 Also can do it on a pod-by-pod basis by setting the same attribute in the pod definition file.
 
-can check by creating the pod and moutnin the service account, then exec into the pod and running `mount | grep serv`.
+can check by creating the pod and moutnin the service account, then exec into the pod and running `mount | grep serv` .
 
-If you also do a `k edit podname`, you can scroll down to the volumes section and view that there is no volume specified for the service account.
+If you also do a `k edit podname` , you can scroll down to the volumes section and view that there is no volume specified for the service account.
 
 ### Limit ServiceAccounts using RBAC
 
@@ -369,7 +376,7 @@ Some restrictions to consider:
 
 ### Anonymous Access
 
-`kube-apiserver --anonymous-auth=true|false`
+ `kube-apiserver --anonymous-auth=true|false`
 
 In 1.6+ anon access is enabled by default
 * If authorization mode other than AlwaysAllow
@@ -401,7 +408,6 @@ View kubeconfig certs and perform a manual API query.
 
 Basically make the `kubernetes` service a nodeport and access via the external IP and nodeport.
 
-
 ### NodeRestriction and AdmissionController
 
 https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction
@@ -414,7 +420,7 @@ Limits what a kubelet can do:
 * Limits the Node labels a kubelet can modify; can only modify labels on it's own node and not other nodes.
 * Can only modify labels on pods running on itself or on the same node.
 * Enable secre workload isolation via labels
-  * No one can pretend to be a "secure" node and schedule secure pods
+  + No one can pretend to be a "secure" node and schedule secure pods
 
 Kubelet kind transforms an instance into a worker node and can communicate with the kubernetes API. 
 
@@ -509,14 +515,13 @@ What we are focused on: **Security layer to reduce attack surface**
 [Linux Foundation project to design open standards for virtualizaion](https://opencontainers.org/)
 
 * Specification:
-  * runtime, image, distribution
+  + runtime, image, distribution
 * Runtime
-  * runc (container runtime that implements their specification)
+  + runc (container runtime that implements their specification)
 
 In the early times, docker was tightly coupled with kubernetes. OCI allows kubelet to interact with different runtimes like crio-c, cri-containerd, etc.
 
 <img src="./assets/oci.png" height="300">
-
 
 ### katacontainers
 
@@ -561,3 +566,157 @@ https://www.youtube.com/watch?v=4gmLXyMeYWI
 
 https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podsecuritycontext-v1-core
 
+Define privilege and access control for Pod/Container
+* userID and groupID
+* Run privileged or unprivileged
+* Linux capabilities
+* ..... and much more!
+
+Can be pod level (all containers) or at Container level (pod-leveloverride)
+
+### Force containers to run as non-root
+
+https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+
+basically should have:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+...
+spec:
+...
+  containers:
+  - name: test-pod
+    image: some-image-that-doesn't-require-root
+    ...
+    securityContext:
+      runAsNonRoot: true
+    ...
+...
+```
+
+Note: the above only works with images that dont require root for processes. 
+
+### Privileged Containers
+
+By default, containers run as privileged. 
+
+It's possible to run as privileged to access all devices and run docker daemon inside container. 
+
+**Privileged means that container user 0 (root) is directly mapped to host user 0 (root)**
+
+How to enable privileged:
+
+```yaml
+apiVersion: vl
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod
+  name: pod
+spec:
+  containers:
+  - command:
+    - sh
+    - -C
+    - sleep 1d
+    image: busybox
+    name: pod
+    resources: (}
+    securityContext:
+      privileged: true
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+### PrivilegeEscalation
+
+** `AllowPrivilegeEscalation` controls whether a process can gain more privleges than its parent process.**
+
+[Docs.](https://kubernetes.io/docs/concepts/security/pod-security-policy/#privilege-escalation)
+
+Spec should look like this for disabled (for a deployment example):
+
+```yaml
+...
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: logger
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: logger
+    spec:
+      containers:
+      - image: httpd:2.4.52-alpine
+        name: httpd
+        securityContext:
+            allowPrivilegeEscalation: false
+...
+```
+
+### Pod Security Policies
+
+* Cluster level resource
+* Controls under which security conditions a Pod has to run
+
+[More info in the docs](https://kubernetes.io/docs/concepts/security/pod-security-policy/).
+
+Apparently deprecated in 1.25. 
+
+How to create a PodSecurityPolicy using the PodSecurityAdmisssionController to always enforce no allowPrivelegeEscalation:
+1. Edit `/etc/kubernetes/manifests/kube-apiserver.yaml`
+2. Find the `--enable-admission-plugins=` flag
+3. Add `PodSecurityPolicy`, it may look like this after: `--enable-admission-plugins=NodeRestriction,PodSecurityPolicy`
+   1. This will enable the admission plugin
+4. [Example of pod with security policy](https://kubernetes.io/docs/concepts/security/pod-security-policy/#create-a-policy-and-a-pod)
+
+Some important notes:
+
+Once you enable the pod security policy admission controller, no pod will be able to be created. 
+Every pod creation will be denied in the whole cluster. the only pods that will be able to be created 
+which can use the pod security policy. And then if that pod security policy allows the pod specification.
+
+An example is with a deployment that contains a service account that cannot see or use that pod security policy. The pods will not start.
+Even if we as admins create the deployment, the deployment itself does not run with admin rights.
+
+If we, as admins, create a pod by itself, we have access to that pod security policy, so the pods will start.
+
+A Solution to this is give the default service account authorization to see the pod security policy via a role:
+
+ `k create role psp-access --verb=use --resource=podsecuritypolicies`
+
+and a rolebinding:
+
+ `k create rolebinding psp-access --role=psp-access --serviceaccount=default:default`
+
+## mTLS (Mutual TLS)
+
+[Good detailed guide here](https://buoyant.io/mtls-guide).
+
+* Mutual authentication
+* Two-way (bilateral authentication)
+* Two parties authenticating each other at the same time
+
+### mTLS pod to pod communication
+
+By default, unencrypted pop to pod communication between pods in a cluster.
+
+Common to perform TLS termination on the ingress.
+
+mTLS allows encrypted pop to pod communication.
+
+### Service Meshes
+
+Uses sidecar proxy containers. Uses iptables rules to route traffic via proxy. E.g. initContainer Needs NET_ADMIN capability.
+
+Proxy contaienr could be managed externally.
+
+[Good article here](https://istio.io/v1.10/blog/2019/data-plane-setup/).
