@@ -51,6 +51,11 @@ CKS Notes
 - [mTLS (Mutual TLS)](#mtls-mutual-tls)
   - [mTLS pod to pod communication](#mtls-pod-to-pod-communication)
   - [Service Meshes](#service-meshes)
+- [OPA](#opa)
+  - [OPA deny all policy](#opa-deny-all-policy)
+  - [OPA - Enforce that all namespaces have a certain label](#opa---enforce-that-all-namespaces-have-a-certain-label)
+  - [OPA - Enforce Deployment replicaCount](#opa---enforce-deployment-replicacount)
+  - [Rego Playground](#rego-playground)
 
 ## Best Practice
 
@@ -720,3 +725,189 @@ Uses sidecar proxy containers. Uses iptables rules to route traffic via proxy. E
 Proxy contaienr could be managed externally.
 
 [Good article here](https://istio.io/v1.10/blog/2019/data-plane-setup/).
+
+## OPA
+
+[Open Policy Agent](https://www.openpolicyagent.org/docs/latest/): The OPA is an open-source, general-purpose policy engine that enables unified, 
+context-aware policy enforcement across the entire stack
+
+* Not k8s specific
+* Easy Implementation of policies (Rego language)
+* Works with json/yaml
+* In K8s it uses admission controllers
+* Needs template and contraint template, much like RBAC model (role and binding)
+
+More info on OPA gatekeeper [here](https://kubernetes.io/blog/2019/08/06/opa-gatekeeper-policy-and-governance-for-kubernetes/).
+
+https://www.youtube.com/watch?v=RDWndems-sk
+
+### OPA deny all policy
+
+```yaml
+#all_pod_always_deny
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAlwaysDeny
+metadata:
+  name: pod-always-deny
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    message: "ACCESS DENIED!"
+```
+
+```yaml
+#always_deny_template
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8salwaysdeny
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAlwaysDeny
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          properties:
+            message:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8salwaysdeny
+        violation[{"msg": msg}] {
+          1 > 0  # if all conditions are true (which in this case it is since  is always greater than 0), throw violation, all pods will be denied.
+          msg := input.parameters.message
+        }
+```
+
+Our constraint defined the error message instead of the template, making it a bit more dynamic.
+
+### OPA - Enforce that all namespaces have a certain label
+
+Template:
+
+```yaml
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          properties:
+            labels:
+              type: array
+              items: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        violation[{"msg": msg, "details": {"missing_labels": missing}}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("you must provide labels: %v", [missing])
+        }
+```
+
+Constraints:
+
+```yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: ns-must-have-cks
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Namespace"]
+  parameters:
+    labels: ["cks"]
+```
+
+Bonus:
+
+All pods:
+
+```yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: pod-must-have-cks
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    labels: ["cks"]
+```
+
+### OPA - Enforce Deployment replicaCount
+
+Contraint:
+
+```yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sMinReplicaCount
+metadata:
+  name: deployment-must-have-min-replicas
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+  parameters:
+    min: 2
+```
+
+Tamplate:
+
+```yaml
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8sminreplicacount
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sMinReplicaCount
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          properties:
+            min:
+              type: integer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sminreplicacount
+        violation[{"msg": msg, "details": {"missing_replicas": missing}}] {
+          provided := input.review.object.spec.replicas
+          required := input.parameters.min
+          missing := required - provided
+          missing > 0
+          msg := sprintf("you must provide %v more replicas", [missing])
+        }
+```
+
+### Rego Playground
+
+https://play.openpolicyagent.org
+
+https://github.com/BouweCeunen/gatekeeper-policies
+
+
