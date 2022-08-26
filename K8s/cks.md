@@ -59,6 +59,10 @@ CKS Notes
 - [Supply Chain Security - Image Footprint](#supply-chain-security---image-footprint)
   - [Reduce Image Footprint with Multi-Stage](#reduce-image-footprint-with-multi-stage)
   - [Secure and Harden Images](#secure-and-harden-images)
+- [Supply Chain Security - Static Analysis](#supply-chain-security---static-analysis)
+- [Supply Chain Security - Image Vulnerability Scanning](#supply-chain-security---image-vulnerability-scanning)
+  - [Known Image Vulns](#known-image-vulns)
+- [Supply Chain Security - Secure Supply Chain](#supply-chain-security---secure-supply-chain)
 
 ## Best Practice
 
@@ -953,3 +957,50 @@ General guidelines:
 * Make fs readonly
 
 https://docs.docker.com/develop/develop-images/dockerfile_best-practices
+
+## Supply Chain Security - Static Analysis
+
+Analyze code before it is pushed. 
+
+[Kubesec is a tool for static analysis](https://kubesec.io/).
+
+Example usage: `docker run -i kubesec/kubesec:512c5e0 scan /dev/stdin < pod.yaml` (must have kubesec installed)
+
+[OPA Conftest](https://github.com/open-policy-agent/conftest) - run tests before code is deployed. 
+
+[Example here for Docker and K8s](https://github.com/whompus/cks-course-environment/tree/master/course-content/supply-chain-security/static-analysis/conftest)
+
+## Supply Chain Security - Image Vulnerability Scanning
+
+Looking for vulns in certain layers of a container image.
+
+### Known Image Vulns
+
+Databases:
+* https://cve.mitre.org
+* https://nvd.nist.gov
+
+Vulns can be discovered in our own image and dependencies.
+* Check during build - use a tool to prevent build if it finds vulns in dependencies
+* Check at runtime - check if something from yesterday to today, maybe a vuln, was dicovered
+
+<img src="./assets/known-image-vulns.png" height="300">
+
+Or using Admission Controllers:
+
+<img src="./assets/known-image-vulns-admissioncontrollers.png" height="300">
+
+Another option is at **build**; before testing and deployment. We have our imanges in a registry, have a tool that constantly scans those images in the registry.
+Recieve alerts of vulnerabilities in a given image and team can go and fix those vulns in that image.
+
+[Clair](https://github.com/quay/clair):
+* Open source project for the static analysis of vulns in app containers
+* Ingests vuln metadata from configured set of sources, like databases that provide CVEs
+* Provides an API as well
+
+[Trivy](https://github.com/aquasecurity/trivy):
+* Open source project
+* Simple and comprehensive vuln scanner for containers and other artifacts, suitable for CI
+
+## Supply Chain Security - Secure Supply Chain
+
