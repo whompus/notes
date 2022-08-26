@@ -56,6 +56,9 @@ CKS Notes
   - [OPA - Enforce that all namespaces have a certain label](#opa---enforce-that-all-namespaces-have-a-certain-label)
   - [OPA - Enforce Deployment replicaCount](#opa---enforce-deployment-replicacount)
   - [Rego Playground](#rego-playground)
+- [Supply Chain Security - Image Footprint](#supply-chain-security---image-footprint)
+  - [Reduce Image Footprint with Multi-Stage](#reduce-image-footprint-with-multi-stage)
+  - [Secure and Harden Images](#secure-and-harden-images)
 
 ## Best Practice
 
@@ -910,4 +913,43 @@ https://play.openpolicyagent.org
 
 https://github.com/BouweCeunen/gatekeeper-policies
 
+## Supply Chain Security - Image Footprint
 
+```docker
+FROM ubuntu # Import layers
+
+RUN apt-get update && apt-get install -y golang-go # Add new layer
+
+CMD ["sh"]
+```
+
+Docker images are built on layers. only `RUN`, `COPY`, and `ADD` create layers. 
+Other instructions create temporary intermediate image, and do not increase the size of the build. 
+Layer caching helps with rebuild images, it only rebuilds the layer that was changed.
+
+### Reduce Image Footprint with Multi-Stage
+
+```docker
+# build container stage 1
+FROM ubuntu
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y golang-go
+COPY app.go .
+RUN CGO_ENABLED=0 go build app.go
+
+# app container stage 2
+FROM alpine
+COPY --from=0 /app .
+CMD ["./app"]
+```
+
+### Secure and Harden Images
+
+https://github.com/killer-sh/cks-course-environment/tree/master/course-content/supply-chain-security/image-footprint
+
+General guidelines:
+* Use specific package versions
+* Dont run as root
+* Make fs readonly
+
+https://docs.docker.com/develop/develop-images/dockerfile_best-practices
