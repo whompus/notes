@@ -63,6 +63,7 @@ CKS Notes
 - [Supply Chain Security - Image Vulnerability Scanning](#supply-chain-security---image-vulnerability-scanning)
   - [Known Image Vulns](#known-image-vulns)
 - [Supply Chain Security - Secure Supply Chain](#supply-chain-security---secure-supply-chain)
+  - [Image Digest](#image-digest)
 
 ## Best Practice
 
@@ -1003,4 +1004,19 @@ Recieve alerts of vulnerabilities in a given image and team can go and fix those
 * Simple and comprehensive vuln scanner for containers and other artifacts, suitable for CI
 
 ## Supply Chain Security - Secure Supply Chain
+
+Using a private docker registry:
+
+Make a secret with:
+
+`kubectl create secret docker-registry my-private-registry --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>`
+
+Patch default service account (or other in use with deployments) to be able to use that secret:
+
+`kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-private-registry"}]}'`
+
+### Image Digest
+
+In pod details in `containerStatuses`, the image digest is `docker-pullable://<url-blah>@sha256:somestring`.
+Can use this as the `image:` in a pod or deployment.
 
