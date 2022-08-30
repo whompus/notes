@@ -77,6 +77,8 @@ CKS Notes
     - [/proc and environment variables](#proc-and-environment-variables)
     - [Falco](#falco)
     - [Syscall talk by Liz Rice](#syscall-talk-by-liz-rice)
+  - [Runtime Security](#runtime-security)
+    - [Immutability of containers at runtime](#immutability-of-containers-at-runtime)
 
 ## Best Practice
 
@@ -1236,3 +1238,90 @@ Folco rules live in `/etc/falco`
 ### Syscall talk by Liz Rice
 
 https://www.youtube.com/watch?v=8g-NUUmCeGI
+
+## Runtime Security
+
+### Immutability of containers at runtime
+
+Why immutability?
+* Advanced deployment methods
+* Easy Rollback
+* More reliability - we always know the state
+* Better security (on container level)
+
+#### Enforcing immutability
+
+* Remove bash/shell
+* Make filesystem read-only
+* run as non root
+
+What if we have no control over the container?
+
+Make manual changes to container via:
+* Command
+* Startup probe (runs a command)
+* Enforce read-only root filesystem using securitycontexts and podsecuritypolicies
+* Move logic to initcontainer
+  * Give initcontainer read-write to a volume
+  * e.g. your app needs to create caches and then afterwards simply serve the files
+  * App containers starts and only have read access to the volume
+
+Some examples:
+Use startup probe to remove `touch` and `bash` from a container.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod
+  name: pod
+spec:
+  containers:
+  - args:
+    - immutable
+    image: nginx
+    name: pod
+    resources: {}
+    startupProbe:
+      exec:
+        command:
+        - rm
+        - /bin/bash /bin/touch
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+Create PodSecurityContext to make filesystem Read-Only; ensure that some directories are still writeable using `emptyDir` volume
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod
+  name: pod
+spec:
+  containers:
+  - args:
+    - immutable
+    image: nginx
+    name: pod
+    resources: {}
+    securityContext:
+      readOnlyRootFilesystem: true
+    volumeMounts:
+    - mountPath: /usr/local/apache2/logs # might be a different dir depending on what the container needs to start.
+      name: cache-volume
+  volumes:
+  - name: cache-volume
+    emptyDir: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+`docker run --read-only --tmpfs /run my-container` - runs a read only container and mounts /run as a temp volume
