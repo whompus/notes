@@ -1,69 +1,82 @@
+# Useful resources:
+
+https://itnext.io/cks-exam-series-1-create-cluster-security-best-practices-50e35aaa67ae
+
 CKS Notes
-- [Best Practice](#best-practice)
-  - [Security principles](#security-principles)
-  - [K8s security categories](#k8s-security-categories)
-  - [K8s security best practices](#k8s-security-best-practices)
-- [K8s Secure Architecture](#k8s-secure-architecture)
-  - [Architecture](#architecture)
-  - [Components](#components)
-  - [Secure Component Communication](#secure-component-communication)
-- [Containers under the hood](#containers-under-the-hood)
-  - [Container](#container)
-  - [Kernel vs User Space](#kernel-vs-user-space)
-  - [Linux Kernel isolation](#linux-kernel-isolation)
-  - [Container tools intro](#container-tools-intro)
-- [Network Policies](#network-policies)
-- [Secure Ingress (Basically just TLS setup)](#secure-ingress-basically-just-tls-setup)
-  - [Recap](#recap)
-  - [Example ingress](#example-ingress)
-  - [TLS and ingress full setup](#tls-and-ingress-full-setup)
-- [Node Metadata Protection](#node-metadata-protection)
-  - [Cloud Platform Node Metadata](#cloud-platform-node-metadata)
-- [CIS Benchmarks](#cis-benchmarks)
-  - [What are CIS benchmarks?](#what-are-cis-benchmarks)
-- [Cluster hardening - RBAC](#cluster-hardening---rbac)
-  - [Accounts](#accounts)
-  - [Users and Certs - Leak + Invalidation](#users-and-certs---leak--invalidation)
-  - [How to create a cert+key and authenitcate as user "jane" (demo)](#how-to-create-a-certkey-and-authenitcate-as-user-jane-demo)
-- [Cluster Hardening - Excercise caution in using ServiceAccounts](#cluster-hardening---excercise-caution-in-using-serviceaccounts)
-  - [Custom service account for pod](#custom-service-account-for-pod)
-  - [Disable ServiceAccount mounting](#disable-serviceaccount-mounting)
-  - [Limit ServiceAccounts using RBAC](#limit-serviceaccounts-using-rbac)
-- [Cluster Hardening - Restrict API Access](#cluster-hardening---restrict-api-access)
-  - [Anonymous Access](#anonymous-access)
-  - [Insecure Access](#insecure-access)
-  - [Manual API Request](#manual-api-request)
-  - [External APIserver Access](#external-apiserver-access)
-  - [NodeRestriction and AdmissionController](#noderestriction-and-admissioncontroller)
-- [Microservice Vulns - Manage K8s Secrets](#microservice-vulns---manage-k8s-secrets)
-- [ETCD Encryption](#etcd-encryption)
-- [Microservice Vulns - Cntainer Runtime Sandboxes](#microservice-vulns---cntainer-runtime-sandboxes)
-  - [Sandbox](#sandbox)
-  - [OCI - Open Container Initiative](#oci---open-container-initiative)
-  - [katacontainers](#katacontainers)
-  - [gVisor](#gvisor)
-  - [Runtime class](#runtime-class)
-- [Security Contexts](#security-contexts)
-  - [Force containers to run as non-root](#force-containers-to-run-as-non-root)
-  - [Privileged Containers](#privileged-containers)
-  - [PrivilegeEscalation](#privilegeescalation)
-  - [Pod Security Policies](#pod-security-policies)
-- [mTLS (Mutual TLS)](#mtls-mutual-tls)
-  - [mTLS pod to pod communication](#mtls-pod-to-pod-communication)
-  - [Service Meshes](#service-meshes)
-- [OPA](#opa)
-  - [OPA deny all policy](#opa-deny-all-policy)
-  - [OPA - Enforce that all namespaces have a certain label](#opa---enforce-that-all-namespaces-have-a-certain-label)
-  - [OPA - Enforce Deployment replicaCount](#opa---enforce-deployment-replicacount)
-  - [Rego Playground](#rego-playground)
-- [Supply Chain Security - Image Footprint](#supply-chain-security---image-footprint)
-  - [Reduce Image Footprint with Multi-Stage](#reduce-image-footprint-with-multi-stage)
-  - [Secure and Harden Images](#secure-and-harden-images)
-- [Supply Chain Security - Static Analysis](#supply-chain-security---static-analysis)
-- [Supply Chain Security - Image Vulnerability Scanning](#supply-chain-security---image-vulnerability-scanning)
-  - [Known Image Vulns](#known-image-vulns)
-- [Supply Chain Security - Secure Supply Chain](#supply-chain-security---secure-supply-chain)
-  - [Image Digest](#image-digest)
+- [Useful resources:](#useful-resources)
+  - [Best Practice](#best-practice)
+    - [Security principles](#security-principles)
+    - [K8s security categories](#k8s-security-categories)
+    - [K8s security best practices](#k8s-security-best-practices)
+  - [K8s Secure Architecture](#k8s-secure-architecture)
+    - [Architecture](#architecture)
+    - [Components](#components)
+    - [Secure Component Communication](#secure-component-communication)
+  - [Containers under the hood](#containers-under-the-hood)
+    - [Container](#container)
+    - [Kernel vs User Space](#kernel-vs-user-space)
+    - [Linux Kernel isolation](#linux-kernel-isolation)
+    - [Container tools intro](#container-tools-intro)
+  - [Network Policies](#network-policies)
+  - [Secure Ingress (Basically just TLS setup)](#secure-ingress-basically-just-tls-setup)
+    - [Recap](#recap)
+    - [Example ingress](#example-ingress)
+    - [TLS and ingress full setup](#tls-and-ingress-full-setup)
+  - [Node Metadata Protection](#node-metadata-protection)
+    - [Cloud Platform Node Metadata](#cloud-platform-node-metadata)
+  - [CIS Benchmarks](#cis-benchmarks)
+    - [What are CIS benchmarks?](#what-are-cis-benchmarks)
+  - [Cluster hardening - RBAC](#cluster-hardening---rbac)
+    - [Accounts](#accounts)
+    - [Users and Certs - Leak + Invalidation](#users-and-certs---leak--invalidation)
+    - [How to create a cert+key and authenitcate as user "jane" (demo)](#how-to-create-a-certkey-and-authenitcate-as-user-jane-demo)
+  - [Cluster Hardening - Excercise caution in using ServiceAccounts](#cluster-hardening---excercise-caution-in-using-serviceaccounts)
+    - [Custom service account for pod](#custom-service-account-for-pod)
+    - [Disable ServiceAccount mounting](#disable-serviceaccount-mounting)
+    - [Limit ServiceAccounts using RBAC](#limit-serviceaccounts-using-rbac)
+  - [Cluster Hardening - Restrict API Access](#cluster-hardening---restrict-api-access)
+    - [Anonymous Access](#anonymous-access)
+    - [Insecure Access](#insecure-access)
+    - [Manual API Request](#manual-api-request)
+    - [External APIserver Access](#external-apiserver-access)
+    - [NodeRestriction and AdmissionController](#noderestriction-and-admissioncontroller)
+  - [Microservice Vulns - Manage K8s Secrets](#microservice-vulns---manage-k8s-secrets)
+  - [ETCD Encryption](#etcd-encryption)
+  - [Microservice Vulns - Cntainer Runtime Sandboxes](#microservice-vulns---cntainer-runtime-sandboxes)
+    - [Sandbox](#sandbox)
+    - [OCI - Open Container Initiative](#oci---open-container-initiative)
+    - [katacontainers](#katacontainers)
+    - [gVisor](#gvisor)
+    - [Runtime class](#runtime-class)
+  - [Security Contexts](#security-contexts)
+    - [Force containers to run as non-root](#force-containers-to-run-as-non-root)
+    - [Privileged Containers](#privileged-containers)
+    - [PrivilegeEscalation](#privilegeescalation)
+    - [Pod Security Policies](#pod-security-policies)
+  - [mTLS (Mutual TLS)](#mtls-mutual-tls)
+    - [mTLS pod to pod communication](#mtls-pod-to-pod-communication)
+    - [Service Meshes](#service-meshes)
+  - [OPA](#opa)
+    - [OPA deny all policy](#opa-deny-all-policy)
+    - [OPA - Enforce that all namespaces have a certain label](#opa---enforce-that-all-namespaces-have-a-certain-label)
+    - [OPA - Enforce Deployment replicaCount](#opa---enforce-deployment-replicacount)
+    - [Rego Playground](#rego-playground)
+  - [Supply Chain Security - Image Footprint](#supply-chain-security---image-footprint)
+    - [Reduce Image Footprint with Multi-Stage](#reduce-image-footprint-with-multi-stage)
+    - [Secure and Harden Images](#secure-and-harden-images)
+  - [Supply Chain Security - Static Analysis](#supply-chain-security---static-analysis)
+  - [Supply Chain Security - Image Vulnerability Scanning](#supply-chain-security---image-vulnerability-scanning)
+    - [Known Image Vulns](#known-image-vulns)
+  - [Supply Chain Security - Secure Supply Chain](#supply-chain-security---secure-supply-chain)
+    - [Image Digest](#image-digest)
+    - [Whitelist Registries with OPA](#whitelist-registries-with-opa)
+    - [ImagePolicyWebhook](#imagepolicywebhook)
+  - [Runtime Security - Behavioral Analytics at host and container level](#runtime-security---behavioral-analytics-at-host-and-container-level)
+    - [Strace](#strace)
+    - [Strace and /proc on ETCD](#strace-and-proc-on-etcd)
+    - [/proc and environment variables](#proc-and-environment-variables)
+    - [Falco](#falco)
+    - [Syscall talk by Liz Rice](#syscall-talk-by-liz-rice)
 
 ## Best Practice
 
@@ -1020,3 +1033,206 @@ Patch default service account (or other in use with deployments) to be able to u
 In pod details in `containerStatuses`, the image digest is `docker-pullable://<url-blah>@sha256:somestring`.
 Can use this as the `image:` in a pod or deployment.
 
+### Whitelist Registries with OPA
+
+Example with images only from `docker.io` and `k8s.gcr.io`.
+
+Template:
+
+```yaml
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8strustedimages
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sTrustedImages
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8strustedimages
+        violation[{"msg": msg}] {
+          image := input.review.object.spec.containers[_].image
+          not startswith(image, "docker.io/")
+          not startswith(image, "k8s.gcr.io/")
+          msg := "not trusted image!"
+        }
+```
+
+Constraint that uses above template:
+
+```yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sTrustedImages
+metadata:
+  name: pod-trusted-images
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+```
+
+Then apply the template and then contraint in your cluster.
+
+You'll see that `k run nginx --image=nginx` is denied by the admission controller, 
+while specifying and image with `k run nginx --image=docker.io/nginx` does because 
+we specified the domain of the registry. Because we have this code:
+
+```
+not startswith(image, "docker.io/")
+not startswith(image, "k8s.gcr.io/")
+```
+
+Could implement other magic to eval whole string. instead of the start or something. 
+
+### ImagePolicyWebhook
+
+[Docs here](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook).
+
+[Kim's docs here](https://itnext.io/cks-exam-series-5-imagepolicywebhook-8d09f1ceee70)
+
+[Moar docs](https://techsquad.rocks/blog/kubernetes_image_policy_webhook_explained/)
+
+<img src="./assets/imagepolicywebhook.png" height="300">
+
+[Github code](https://github.com/whompus/cks-course-environment/tree/master/course-content/supply-chain-security/secure-the-supply-chain/whitelist-registries/ImagePolicyWebhook)
+
+```shell
+# get example
+git clone https://github.com/killer-sh/cks-course-environment.git
+cp -r cks-course-environment/course-content/supply-chain-security/secure-the-supply-chain/whitelist-registries/ImagePolicyWebhook/ /etc/kubernetes/admission
+
+# need to add another plugin to the apiserver:
+vim /etc/kubernetes/manifests/kube-apiserver.yaml
+
+# add
+--enable-admission-plugins=NodeRestriction,ImagePolicyWebhook
+
+# to debug the apiserver we check logs in:
+/var/log/pods/kube-system_kube-apiserver*
+
+# example of an external service which can be used
+https://github.com/flavio/kube-image-bouncer
+```
+
+NOTE: can set `defaultAllow` to true to allow pods if the external bouncer/service isn't available.
+
+```yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: AdmissionConfiguration
+plugins:
+  - name: ImagePolicyWebhook
+    configuration:
+      imagePolicy:
+        kubeConfigFile: /etc/kubernetes/admission/kubeconf
+        allowTTL: 50
+        denyTTL: 50
+        retryBackoff: 500
+        defaultAllow: false # DENY ALL PODS IF SERVICE NOT AVAILABLE
+```
+
+Dont forget about volume mounts and volumes! `kube-apiserver.yaml` should look like this:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+...
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --admission-control-config-file=/etc/kubernetes/admission/admission_config.yaml
+    - --enable-admission-plugins=NodeRestriction,ImagePolicyWebhook
+...
+    volumeMounts:
+    - mountPath: /etc/kubernetes/admission
+      name: admission
+      readOnly: true
+...
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/admission
+      type: DirectoryOrCreate
+    name: admission
+...
+```
+
+## Runtime Security - Behavioral Analytics at host and container level
+
+[Syscalls](https://man7.org/linux/man-pages/man2/syscalls.2.html)
+
+Seccomp and apparmor live between the syscall and user space to filter out sepcific syscalls and to implement another protection layer.
+
+### Strace
+
+Intercepts and logs system calls made by a process.
+
+`strace ls /` as an example. See what syscalls are made by `ls`
+
+`strace -cw ls /` - the `-cw` options will "count and summarize" the output.
+
+### Strace and /proc on ETCD
+
+```shell
+$ strace
+  -o filename
+  -v verbose
+  -f follow forks
+
+  -cw (count and summarize)
+  -p pid
+  -P path
+```
+
+
+`/proc`
+
+* Information and connections to processes and kernel
+* Study it to learn how processes work
+* Config and admin tasks
+* Contains files that dont really exist, yet you can access these
+
+strace k8s etcd:
+1. List syscalls
+   1. find pid of etcd:
+`ps aux | grep etcd`
+
+   2. strace the pid with:
+`strace -p <pid-of-etcd>`
+
+3. Find open files
+   1. `cd /proc/<pid-of-etcd>`
+   2. `ls -lh fd`
+   
+4. Read secret value
+   1. Find directory `/proc/<etcd-pid>/fd/<some number that is symlinked to the etcd db>`
+   2. grep for secret key
+   3. can find directory of secret value
+
+### /proc and environment variables
+
+Create Apache pod with a secret as an env var, read that scret from host filesystem.
+
+Secrets as environment variables cna be read from anyone who can access /proc on the host.
+
+### Falco
+
+Cloud native runtime security. 
+
+Access - Deep kernel tracing built on the linux kernel.
+
+Assert - Describe security rules against a system (+default ones); detect unwanted behavior
+
+Action - Automated response to security violations
+
+Folco rules live in `/etc/falco`
+
+### Syscall talk by Liz Rice
+
+https://www.youtube.com/watch?v=8g-NUUmCeGI
