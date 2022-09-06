@@ -79,6 +79,11 @@ CKS Notes
     - [Syscall talk by Liz Rice](#syscall-talk-by-liz-rice)
   - [Runtime Security](#runtime-security)
     - [Immutability of containers at runtime](#immutability-of-containers-at-runtime)
+    - [Auditing](#auditing)
+  - [System Hardening](#system-hardening)
+    - [Kernel Hardening Tools](#kernel-hardening-tools)
+    - [Seccomp](#seccomp)
+    - [Reduce Attack Surface](#reduce-attack-surface)
 
 ## Best Practice
 
@@ -943,7 +948,7 @@ RUN apt-get update && apt-get install -y golang-go # Add new layer
 CMD ["sh"]
 ```
 
-Docker images are built on layers. only `RUN`, `COPY`, and `ADD` create layers. 
+Docker images are built on layers. only `RUN` , `COPY` , and `ADD` create layers. 
 Other instructions create temporary intermediate image, and do not increase the size of the build. 
 Layer caching helps with rebuild images, it only rebuilds the layer that was changed.
 
@@ -1024,20 +1029,20 @@ Using a private docker registry:
 
 Make a secret with:
 
-`kubectl create secret docker-registry my-private-registry --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>`
+ `kubectl create secret docker-registry my-private-registry --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>`
 
 Patch default service account (or other in use with deployments) to be able to use that secret:
 
-`kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-private-registry"}]}'`
+ `kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-private-registry"}]}'`
 
 ### Image Digest
 
-In pod details in `containerStatuses`, the image digest is `docker-pullable://<url-blah>@sha256:somestring`.
+In pod details in `containerStatuses` , the image digest is `docker-pullable://<url-blah>@sha256:somestring` .
 Can use this as the `image:` in a pod or deployment.
 
 ### Whitelist Registries with OPA
 
-Example with images only from `docker.io` and `k8s.gcr.io`.
+Example with images only from `docker.io` and `k8s.gcr.io` .
 
 Template:
 
@@ -1192,8 +1197,7 @@ $ strace
   -P path
 ```
 
-
-`/proc`
+ `/proc`
 
 * Information and connections to processes and kernel
 * Study it to learn how processes work
@@ -1203,17 +1207,20 @@ $ strace
 strace k8s etcd:
 1. List syscalls
    1. find pid of etcd:
-`ps aux | grep etcd`
+ `ps aux | grep etcd`
 
    2. strace the pid with:
-`strace -p <pid-of-etcd>`
+ `strace -p <pid-of-etcd>`
 
 3. Find open files
    1. `cd /proc/<pid-of-etcd>`
+
    2. `ls -lh fd`
+
    
 4. Read secret value
    1. Find directory `/proc/<etcd-pid>/fd/<some number that is symlinked to the etcd db>`
+
    2. grep for secret key
    3. can find directory of secret value
 
@@ -1262,9 +1269,9 @@ Make manual changes to container via:
 * Startup probe (runs a command)
 * Enforce read-only root filesystem using securitycontexts and podsecuritypolicies
 * Move logic to initcontainer
-  * Give initcontainer read-write to a volume
-  * e.g. your app needs to create caches and then afterwards simply serve the files
-  * App containers starts and only have read access to the volume
+  + Give initcontainer read-write to a volume
+  + e.g. your app needs to create caches and then afterwards simply serve the files
+  + App containers starts and only have read access to the volume
 
 Some examples:
 Use startup probe to remove `touch` and `bash` from a container.
@@ -1325,3 +1332,289 @@ status: {}
 ```
 
 `docker run --read-only --tmpfs /run my-container` - runs a read only container and mounts /run as a temp volume
+
+### Auditing
+
+#### Enable Audit Logging in Apiserver
+
+https://github.com/whompus/cks-course-environment/tree/master/course-content/runtime-security/auditing
+
+https://www.youtube.com/watch?v=HXtLTxo30SY
+
+Audit Policy STAGES:
+* RequestRecieved
+* ResponseStarted
+* ResponseComplete
+* Panic
+
+Everything about auditing [here](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/).
+
+Audit policies are treated much like firewall rules. Top to bottom.
+
+Where to store data?
+* Log (JSON files)
+* Webhook (external API)
+* Dynamic backend (AuditSink API)
+
+Most of these can be shipped to elasticsearch, filebeat, or fluentd for example, 
+
+#### Restrict logged data with a policy
+
+* Nothing from stage RequestRecieved
+* Nothing from "get", "watch", "list"
+* From secrets only metadata level
+* Everything else RequestResponse level
+
+How do we do this?
+
+1. Change policy file
+2. Disable audit logging in apiserver, wait till restart
+3. Enable audit logging in apiserver, wait till restart
+   1. If apiserver doesn't start, then check: `/var/log/pods/kube-system_kube-apiserver*`
+
+4. Test changes
+
+#### Investigate API access history
+
+Policy might look like this:
+
+```yaml
+apiVersion: audit.k8s.io/v1 # This is required.
+kind: Policy
+# Don't generate audit events for all requests in RequestReceived stage.
+omitStages:
+  - "RequestReceived"
+rules:
+  - level: None
+    verbs: ["get", "watch", "list"]
+  - level: RequestResponse
+    resources:
+    - group: "" # core API group
+      resources: ["secrets"]
+  - level: RequestResponse
+```
+
+Then disable and reenable audit by commenting out the line specifying audit policy location, 
+waiting for api server to restart, then removing comment.
+
+Reading the output of an event:
+
+```json
+{
+   "kind":"Event",
+   "apiVersion":"audit.k8s.io/v1",
+   "level":"RequestResponse",
+   "auditID":"1999a948-3392-4293-b844-b3bbe4edffc1",
+   "stage":"ResponseComplete",
+   "requestURI":"/api/v1/namespaces/default/secrets",
+   "verb":"create", // the method used, e.g. "patch" would mean something was updated
+   "user":{
+      "username":"system:kube-controller-manager", // user who initiated
+      "groups":[
+         "system:authenticated"
+      ]
+   },
+   "sourceIPs":[
+      "10.100.10.172"
+   ],
+   "userAgent":"kube-controller-manager/v1.22.2 (linux/amd64) kubernetes/8b5a191/tokens-controller",
+   "objectRef":{ // the object in question
+      "resource":"secrets",
+      "namespace":"default",
+      "name":"very-crazy-sa-token-7c86h",
+      "apiVersion":"v1"
+   },
+   "responseStatus":{
+      "metadata":{
+         
+      },
+      "code":201
+   },
+   "requestObject":{ // the object that has been modified
+      "kind":"Secret",
+      "apiVersion":"v1",
+      "metadata":{
+         "name":"very-crazy-sa-token-7c86h",
+         "namespace":"default",
+         "creationTimestamp":null,
+         "annotations":{
+            "kubernetes.io/service-account.name":"very-crazy-sa",
+            "kubernetes.io/service-account.uid":"005bd4e4-dbbd-4bc7-94c2-30566db36eec"
+         }
+      },
+      "data":{
+         ...
+      },
+      "type":"kubernetes.io/service-account-token"
+   },
+   "responseObject":{
+      "kind":"Secret",
+      "apiVersion":"v1",
+      "metadata":{
+         "name":"very-crazy-sa-token-7c86h",
+         "namespace":"default",
+         "uid":"a321ceec-d479-4f03-ac53-651049768f77",
+         "resourceVersion":"23435104",
+         "creationTimestamp":"2022-09-06T14:57:31Z",
+         "annotations":{
+            "kubernetes.io/service-account.name":"very-crazy-sa",
+            "kubernetes.io/service-account.uid":"005bd4e4-dbbd-4bc7-94c2-30566db36eec"
+         },
+         "managedFields":[
+            {
+               ...
+            }
+         ]
+      },
+      "data":{
+         ...
+      },
+      "type":"kubernetes.io/service-account-token"
+   },
+   "requestReceivedTimestamp":"2022-09-06T14:57:31.102733Z",
+   "stageTimestamp":"2022-09-06T14:57:31.106008Z",
+   "annotations":{
+      "authorization.k8s.io/decision":"allow",
+      "authorization.k8s.io/reason":"RBAC: allowed by ClusterRoleBinding \"system:kube-controller-manager\" of ClusterRole \"system:kube-controller-manager\" to User \"system:kube-controller-manager\""
+   }
+}
+```
+
+## System Hardening
+
+### Kernel Hardening Tools
+
+[Seccomp](https://docs.docker.com/engine/security/seccomp/)
+
+[AppArmor](https://apparmor.net/)
+
+#### AppArmor
+
+Application can access thing like the Filesystem, Other process, or Networks.
+AppArmor disallows the application from using certain resources like above.
+
+We control this by creating [Profiles](https://ubuntu.com/tutorials/beginning-apparmor-profile-development#1-overview).
+
+Profile Modes:
+* Unconfined - process can escape
+* Complain - Process can escape but will be logged
+* Enforce - Processes cannot escape
+
+Simple apparmor profile for `curl`:
+
+* `aa-status` shows what is currently loaded/configured
+* Install `apparmor-utils`: `sudo apt-get install apparmor-utils`
+* Use `aa-genprof` to generate a new profile: `aa-genprof curl`
+* View profile in `/etc/apparmor.d/`, file name is full path to process; `usr.bin.curl`
+* We want to allow normal curl things but alert, we can check that in syslogs `/var/log/syslog`
+* To update: `aa-logprof`, this will check logs and update a profile
+* Should see curl, use `(A)llow`, then `(S)ave`
+
+#### Nginx Docker container using AppArmor profile
+* apparmor profile
+https://github.com/whompus/cks-course-environment/tree/master/course-content/system-hardening/kernel-hardening-tools/apparmor
+* k8s docs apparmor
+https://kubernetes.io/docs/tutorials/clusters/apparmor/#example
+* Once you have profile on worker at `/etc/apparmor.d/docker-nginx`, use `apparmor_parser /etc/apparmor.d/docker-nginx`
+* Run the docker container with `docker run --security-opt apparmor /etc/apparmor.d/docker-nginx`
+
+#### AppArmor + K8s
+
+* Container runtime needs to support AppArmor
+* AppArmor must be installed on every node
+* AppArmor profiles need to be available on every node
+* AppArmor profile are specified per container which is done using annotations
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  annotations:
+    # Tell Kubernetes to apply the AppArmor profile "docker-nginx" we created above to pod "secure", notice the annotation name.
+    # Note that this is ignored if the Kubernetes node is not running version 1.4 or greater.
+    container.apparmor.security.beta.kubernetes.io/secure: localhost/docker-nginx
+  labels:
+    run: secure
+  name: secure
+spec:
+  containers:
+  - image: nginx
+    name: secure
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```
+
+### Seccomp
+
+* Secure Computing Mode
+* Security facility in the Linux Kernel
+* Restrict what kind of syscalls can be executed
+
+`SIGKILL` on things that aren't allowed.
+
+#### Docker and Seccomp
+
+https://github.com/whompus/cks-course-environment/blob/master/course-content/system-hardening/kernel-hardening-tools/seccomp/profile-docker-nginx.json
+
+Copy profile, and send to working node. 
+
+`docker run --security-opt seccomp=/path/to/profile.json nginx -d`
+
+#### k8s and Seccomp
+
+https://kubernetes.io/blog/2021/08/25/seccomp-default/#enabling-the-feature
+
+https://kubernetes.io/docs/tutorials/security/seccomp/
+
+v1.19 or later:
+
+https://kubernetes.io/docs/tutorials/security/seccomp/#create-a-pod-with-a-seccomp-profile-for-syscall-auditing
+
+Profiles should live in folder specified in kubelet config, e.g. `/var/lib/kubelet/seccomp`
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: audit-pod
+  labels:
+    app: audit-pod
+spec:
+  securityContext:
+    seccompProfile:
+      type: Localhost
+      localhostProfile: profiles/audit.json
+  containers:
+  - name: test-container
+    image: hashicorp/http-echo:0.2.3
+    args:
+    - "-text=just made some syscalls!"
+    securityContext:
+      allowPrivilegeEscalation: false
+```
+
+Pre-v1.19 possible to do with annotation (probably wont see this):
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  ...
+  annotations: 
+    container.apparmor.security.beta.kubernetes.io/secure: localhost/docker-nginx
+  ...
+spec:
+  ...
+```
+
+#### syscalls
+https://www.youtube.com/watch?v=8g-NUUmCeGI
+
+#### AppArmor, SELinux Introduction 
+https://www.youtube.com/watch?v=JFjXvIwAeVI
+
+### Reduce Attack Surface
+
