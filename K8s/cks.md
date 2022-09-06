@@ -1500,17 +1500,18 @@ Profile Modes:
 * Complain - Process can escape but will be logged
 * Enforce - Processes cannot escape
 
-Simple apparmor profile for `curl`:
+Simple apparmor profile for `curl` :
 
 * `aa-status` shows what is currently loaded/configured
 * Install `apparmor-utils`: `sudo apt-get install apparmor-utils`
 * Use `aa-genprof` to generate a new profile: `aa-genprof curl`
-* View profile in `/etc/apparmor.d/`, file name is full path to process; `usr.bin.curl`
+* View profile in `/etc/apparmor.d/`, file name is full path to process;  `usr.bin.curl`
 * We want to allow normal curl things but alert, we can check that in syslogs `/var/log/syslog`
 * To update: `aa-logprof`, this will check logs and update a profile
 * Should see curl, use `(A)llow`, then `(S)ave`
 
 #### Nginx Docker container using AppArmor profile
+
 * apparmor profile
 https://github.com/whompus/cks-course-environment/tree/master/course-content/system-hardening/kernel-hardening-tools/apparmor
 * k8s docs apparmor
@@ -1561,7 +1562,7 @@ https://github.com/whompus/cks-course-environment/blob/master/course-content/sys
 
 Copy profile, and send to working node. 
 
-`docker run --security-opt seccomp=/path/to/profile.json nginx -d`
+ `docker run --security-opt seccomp=/path/to/profile.json nginx -d`
 
 #### k8s and Seccomp
 
@@ -1611,10 +1612,11 @@ spec:
 ```
 
 #### syscalls
+
 https://www.youtube.com/watch?v=8g-NUUmCeGI
 
 #### AppArmor, SELinux Introduction 
+
 https://www.youtube.com/watch?v=JFjXvIwAeVI
 
 ### Reduce Attack Surface
-
