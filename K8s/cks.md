@@ -82,6 +82,7 @@ CKS Notes
     - [Auditing](#auditing)
   - [System Hardening](#system-hardening)
     - [Kernel Hardening Tools](#kernel-hardening-tools)
+    - [AppArmor](#apparmor)
     - [Seccomp](#seccomp)
     - [Reduce Attack Surface](#reduce-attack-surface)
 
@@ -1488,7 +1489,7 @@ Reading the output of an event:
 
 [AppArmor](https://apparmor.net/)
 
-#### AppArmor
+### AppArmor
 
 Application can access thing like the Filesystem, Other process, or Networks.
 AppArmor disallows the application from using certain resources like above.
@@ -1620,3 +1621,27 @@ https://www.youtube.com/watch?v=8g-NUUmCeGI
 https://www.youtube.com/watch?v=JFjXvIwAeVI
 
 ### Reduce Attack Surface
+
+Attack surface:
+* Host OS Footprint
+  * Keep apps up to date
+  * Linux Kernel up to date
+  * Remove unecessary packages
+* IAM Roles
+* Network Access
+  * Network behind FW
+  * Check open ports and close as necessary
+  * `netstat` or `lsof`
+
+* Worker nodes **should only run k8s**, remove unecessary services
+* Node Recycling
+  * Nodes should be ephemeral
+  * Created from images
+  * Can be recycled at any time (and fast if necessary)
+
+Use `systemctl` for services, `ps` for processes.
+
+`systemctl list-units --type=service --state=running` to list all running services.
+
+`lsof -i :21` to see what's listening on port 21 for example
+
