@@ -5,3 +5,5 @@ This repo serves as a brain dump and to record what I've been learning.
 Some may be incomplete and missing things (prolly cause I forgot to push them).
 
 Hopefully others find use for it as well. 
+
+[K8s](K8s/cka.md)
