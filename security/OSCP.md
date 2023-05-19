@@ -22,6 +22,10 @@
   - [User Account Control (UAC)](#user-account-control-uac)
   - [`runas` and `cmd /c`](#runas-and-cmd-c)
   - [NTFS Permissions](#ntfs-permissions)
+- [PEN-200](#pen-200)
+  - [Risks, Threats, Vulnerabilities, and Exploits](#risks-threats-vulnerabilities-and-exploits)
+  - [Passive Information gathering](#passive-information-gathering)
+  - [Active Information Gathering](#active-information-gathering)
 
 ## Introduction to PEN-100
 
@@ -387,3 +391,41 @@ Music\RockAndRoll NT AUTHORITY\SYSTEM:(OI)(CI)(F)
 ```
 `/t` option to check that the assigned permissions have been propogated to the children of the dir
 \
+
+## PEN-200
+
+https://www.schneier.com/blog/archives/2008/03/the_security_mi_1.html
+
+https://www.offsec.com/offsec/what-it-means-to-try-harder/
+
+### Risks, Threats, Vulnerabilities, and Exploits
+
+Risk is based on probability and impact, and is divided into four quadrants:
+
+1. Low probability, low impact events
+2. Low probability, high impact events
+3. High probability, low impact events
+4. High probability, high impact events
+
+Threats are anything that poses a risk to an asset we care about. 
+
+For a threat to become an actual risk, the target being threatened must be vulnerable in some manner. A vuln is a flaw that allow a threat to cause harm.
+
+Attack surface is all of the endpoints or assets or components of a system that could be vulnerable to exploitation.
+
+### Passive Information gathering
+
+* Whois enumeration
+* Google Dorking: https://www.exploit-db.com/google-hacking-database
+* Netcraft: https://searchdns.netcraft.com/ and https://sitereport.netcraft.com/, etc.
+* Open-source code: reconnaisance on github for sensitive data
+* Shodan: crawls the web for internetconnected devices
+* Security Headers and SSL/TLS - https://securityheaders.com, https://ssllabs.com/ssltest
+
+### Active Information Gathering
+
+* DNS Enumration: lucrative for information gathering
+  * `host www.site.com`
+  * `host -t mx site.com` - mail servers
+  * `host -t txt site.com` - txt records
+  * `
