@@ -26,6 +26,20 @@
   - [Risks, Threats, Vulnerabilities, and Exploits](#risks-threats-vulnerabilities-and-exploits)
   - [Passive Information gathering](#passive-information-gathering)
   - [Active Information Gathering](#active-information-gathering)
+- [Nmap Scripting Engine (NSE)](#nmap-scripting-engine-nse)
+  - [Overview](#overview)
+  - [Usage](#usage)
+  - [Creating Your Own Scripts](#creating-your-own-scripts)
+- [Web application assessment tools](#web-application-assessment-tools)
+- [Fingerprinting Web Servers with Nmap](#fingerprinting-web-servers-with-nmap)
+  - [Overview](#overview-1)
+  - [Basic Service Detection](#basic-service-detection)
+  - [Using NSE Scripts](#using-nse-scripts)
+  - [Advanced Fingerprinting](#advanced-fingerprinting)
+- [Basic XSS and Testing](#basic-xss-and-testing)
+  - [Types of XSS](#types-of-xss)
+  - [Intermediate XSS Techniques](#intermediate-xss-techniques)
+  - [Mitigation](#mitigation)
 
 ## Introduction to PEN-100
 
@@ -428,4 +442,113 @@ Attack surface is all of the endpoints or assets or components of a system that 
   * `host www.site.com`
   * `host -t mx site.com` - mail servers
   * `host -t txt site.com` - txt records
-  * `
+
+## Nmap Scripting Engine (NSE)
+
+### Overview
+
+- NSE is used to automate certain tasks that Nmap performs, such as host discovery, port scanning, version detection, and more.
+- NSE scripts are written in the Lua programming language.
+- As of September 2021, Nmap comes with over 600 pre-written NSE scripts, addressing a wide range of functionality.
+- NSE scripts can be categorized into several categories: default, discovery, safe, intrusive, vuln, exploit, auth, broadcast, brute, dos, external, fuzzer, malware, version, and more.
+
+### Usage
+
+- To run a specific NSE script, you can use the `--script` option followed by the script name, like this: `nmap --script <script-name> <target>`
+- For example, to run the `vuln` script against a target, you would use: `nmap --script vuln <target>`
+- You can also use wildcards and categories with the `--script` option. For example, `nmap --script "http-*" <target>` will run all scripts whose names start with "http-", and `nmap --script vuln <target>` will run all scripts in the "vuln" category.
+- Some scripts require arguments, which can be passed with the `--script-args` option. For example, `nmap --script http-brute --script-args userdb=users.txt,passdb=pass.txt <target>` will run the `http-brute` script with the specified user and password databases.
+
+### Creating Your Own Scripts
+
+- To write your own NSE scripts, you need to know the basics of Lua and Nmap's NSE libraries.
+- An NSE script consists of several parts:
+  - A rule function that determines when the script should be run. The three types of rule functions are `prerule`, `hostrule`, and `portrule`.
+  - An action function that performs the main task of the script.
+  - A description that includes metadata about the script.
+- Nmap provides several NSE libraries to help with script development. These libraries include functionality for networking, string manipulation, data handling, and more.
+
+## Web application assessment tools
+
+
+## Fingerprinting Web Servers with Nmap
+
+### Overview
+
+Web server fingerprinting is the process of determining the type and version of a web server (software and sometimes hardware) running on a target system. Nmap can be used for this purpose using its service detection and NSE scripts.
+
+### Basic Service Detection
+
+- Nmap's `-sV` option is used to enable version detection, which can help identify the web server software and its version. 
+  - Example: `nmap -sV <target>`
+
+### Using NSE Scripts
+
+- Nmap's Scripting Engine (NSE) has scripts specifically for web server fingerprinting. 
+- `http-enum` script can be used to enumerate directories used by popular web applications and servers.
+  - Example: `nmap --script http-enum <target>`
+- `http-server-header` script returns the HTTP server header of the web server.
+  - Example: `nmap --script http-server-header <target>`
+
+### Advanced Fingerprinting
+
+- For a more granular fingerprinting, you can use the `http-waf-detect` and `http-waf-fingerprint` scripts to identify the presence of software Web Application Firewall (WAF) and its type.
+  - Example: `nmap --script http-waf-detect --script http-waf-fingerprint <target>`
+
+## Basic XSS and Testing
+
+Cross-Site Scripting (XSS) is a type of injection security vulnerability typically found in web applications. XSS allows attackers to inject malicious scripts into webpages viewed by other users.
+
+### Types of XSS
+
+There are mainly three types of XSS:
+
+#### 1.Stored XSS (Persistent XSS)
+
+- This type of XSS vulnerability occurs when the data provided by the attacker is saved by the server and then permanently displayed on "normal" pages returned to users. 
+- For example, a comment on a blog post or a message on a forum that contains malicious script.
+
+```html
+<p>Check out this cool link: <a href="#" onmouseover="javascript:alert('XSS')">Click me!</a></p>
+```
+
+If the server doesn't properly sanitize this input, the malicious JavaScript code will be stored on the server. When other users view this message, the JavaScript code will be executed in their browsers.
+
+#### 2. Reflected XSS (Non-Persistent XSS)
+
+- Reflected XSS occurs when the malicious script is part of the victim's request to the website. The website then includes this malicious script from the request in the response. 
+- A common example of this is in error messages, search engines, or any other response that includes some or all of the input sent to the server as part of the request.
+
+```html
+http://example.com/search?query=<script>alert('XSS')</script>
+```
+
+If the server includes the query parameter value in the search results page without sanitizing it, the JavaScript code will be executed in the user's browser.
+
+#### 3. DOM-Based XSS
+
+- DOM-based XSS occurs when the client-side script of a web application writes user input to the Document Object Model (DOM). The web browser then executes the script, leading to an XSS vulnerability.
+
+Testing for XSS vulnerabilities involves providing input that attempts to invoke JavaScript code. The simplest example is attempting to inject a script tag: `<script>alert('XSS')</script>`
+
+
+```html
+http://example.com/#<img src=x onerror=alert('XSS')>
+```
+
+In this case, if the page uses the fragment identifier (after the #) in its JavaScript code without sanitizing it, the JavaScript code will be executed in the user's browser.
+
+Each of these examples is designed to execute a simple alert function, but in a real attack, the JavaScript code could do much more harmful things, such as stealing cookies or other sensitive information.
+
+### Intermediate XSS Techniques
+
+- Using different event handlers such as `onmouseover`, `onload`, `onerror` etc. to trigger the payload.
+- Using encoding to bypass filters, like URL encoding, HTML entity encoding, etc.
+- Using less common HTML tags that can contain JavaScript, such as `img`, `link`, `div`, `body`, `input`, `textarea`, `form`, `frameset`, `iframe`, etc.
+
+### Mitigation
+
+- Input validation: Ensure that input is what you expect. For example, a field expecting a number doesn't need to accept letters or special characters.
+- Output encoding: Whenever output is generated dynamically and includes some form of user input, ensure it's properly encoded.
+- Use security headers: For example, the Content Security Policy (CSP) header can significantly reduce the risk of XSS attacks.
+- Use HttpOnly cookies: This attribute can prevent access to cookie values via JavaScript.
