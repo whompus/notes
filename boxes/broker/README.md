@@ -24,7 +24,7 @@ nc -w 3 broker.htb 1234 < nginx.conf
 Custom config:
 
 ```json
-# nginx.conf
+// nginx.conf
 user root;
 events {
     worker_connections 512;
