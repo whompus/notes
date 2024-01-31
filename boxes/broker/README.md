@@ -15,7 +15,7 @@ Used nginx which user had access to to start nginx server and allow PUT with Web
 To open up a stream from local to remote with reverse shell:
 ```shell
 # on remote
-nc -l -p 1234 > nginx.conf`
+nc -l -p 1234 > nginx.conf
 
 # on host
 nc -w 3 broker.htb 1234 < nginx.conf
