@@ -56,3 +56,4 @@ DB_PASSWORD=SuperDuperPass123
 I'm know you're working as fast as you can to do the DB migration. While we're partially down, can you also upgrade the OS on our web host? There have been a few serious Linux kernel CVEs already this year. That one in OverlayFS / FUSE looks nasty. We can't get popped by that.
 
 OverlayFS vuln for linux kernel popped root shell
+
