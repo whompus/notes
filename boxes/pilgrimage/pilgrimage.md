@@ -65,6 +65,8 @@ if __name__ == '__main__':
 
 ```
 
+https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS
+
 sqlite3 output.sqlite
 SQLite version 3.44.2 2023-11-24 11:41:44
 Enter ".help" for usage hints.
