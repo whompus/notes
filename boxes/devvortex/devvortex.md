@@ -2,6 +2,8 @@
 
 `nmapinit devvortex.htb`
 
+Nothing interesting really besides a website.
+
 # vhost scanning
 
 ```
@@ -33,6 +35,8 @@ ________________________________________________
 
 :: Progress: [20469/20469] :: Job [1/1] :: 205 req/sec :: Duration: [0:00:38] :: Errors: 0 ::
 ```
+
+So we know we can go to `dev.devvortex.htb`
 
 # nmap init
 
