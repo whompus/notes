@@ -1,0 +1,379 @@
+╔══════════╣ Analyzing MariaDB Files (limit 70)
+                                                                                                                                                                                        
+-rw------- 1 root root 317 Nov 21 10:55 /etc/mysql/debian.cnf
+
+
+═╣ Possible private SSH keys were found!
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/EC/Formats/Keys/PKCS8.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/EC/Formats/Keys/PKCS1.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/DH/Formats/Keys/PKCS8.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/Common/Formats/Keys/PKCS8.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/Common/Formats/Keys/PKCS1.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/Common/Formats/Keys/OpenSSH.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/DSA/Formats/Keys/PKCS8.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/DSA/Formats/Keys/PKCS1.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/RSA/Formats/Keys/PKCS8.php
+/var/www/dev.devvortex.htb/libraries/vendor/phpseclib/phpseclib/phpseclib/Crypt/RSA/Formats/Keys/PKCS1.php
+hpseclib/phpseclib/phpseclib/Crypt/RSA/Formats/Keys/PSS.php                                                                                                                             
+/var/www/dev.devvortex.htb/libraries/vendor/web-token/jwt-core/Util/ECKey.php
+
+
+
+══╣ PHP exec extensions
+drwxr-xr-x 2 root root 4096 Oct 26 15:12 /etc/nginx/sites-enabled                                                                                                                       
+drwxr-xr-x 2 root root 4096 Oct 26 15:12 /etc/nginx/sites-enabled
+lrwxrwxrwx 1 root root 44 Sep 25 16:40 /etc/nginx/sites-enabled/dev.devvortex.htb -> /etc/nginx/sites-available/dev.devvortex.htb
+server {
+    listen 80;
+    server_name dev.devvortex.htb;
+    root /var/www/dev.devvortex.htb;
+    index index.html index.htm index.php;
+    charset utf-8;
+    access_log /var/log/nginx/dev.devvortex.htb.access.log;
+    error_log /var/log/nginx/dev.devvortex.htb.error.log info;
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+    location ~* /(images|cache|media|logs|tmp)/.*.(php|pl|py|jsp|asp|sh|cgi)$ {
+        return 403;
+        error_page 403 /403_error.html;
+    }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+    error_page 404 /index.php;
+.php$ {ation ~ 
+        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include /etc/nginx/fastcgi.conf;
+    }
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+    location /api/ {
+        try_files $uri $uri/ /api/index.php?$args;
+    }
+}
+lrwxrwxrwx 1 root root 36 Sep 12  2023 /etc/nginx/sites-enabled/default -> /etc/nginx/sites-available/devvortex
+server {
+    listen 80;
+    listen [::]:80;
+    server_name devvortex.htb www.devvortex.htb;
+    root /var/www/devvortex/;
+    index index.html index.htm index.nginx-debian.html;
+    if ($host != devvortex.htb) {
+        rewrite ^ http://devvortex.htb/;
+    }
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+
+
+-rw-r--r-- 1 root root 72539 Jun 27  2023 /etc/php/7.4/cli/php.ini
+allow_url_fopen = On
+allow_url_include = Off
+odbc.allow_persistent = On
+mysqli.allow_persistent = On
+pgsql.allow_persistent = On
+-rw-r--r-- 1 root root 72945 Oct 18 14:20 /etc/php/7.4/fpm/php.ini
+allow_url_fopen = On
+allow_url_include = Off
+odbc.allow_persistent = On
+mysqli.allow_persistent = On
+pgsql.allow_persistent = On
+
+-rw-r--r-- 1 root root 1519 Oct 18 14:21 /etc/nginx/nginx.conf
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+events {
+        worker_connections 768;
+}
+http {
+[0mize 1000M;t_max_body_s                                                                                                                                                               
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        include /etc/nginx/mime.types;
+[1;31met-stream;type application/oct
+        ssl_prefer_server_ciphers on;
+        access_log /var/log/nginx/access.log;
+0mginx/error.log; /var/log/n                                                                                                                                                            
+        gzip on;
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}
+
+-rw-r--r-- 1 root root 389 Feb  4  2019 /etc/default/nginx
+
+31mnginx-x 1 root root 4579 Feb  4  2019 /etc/init.d/
+
+-rw-r--r-- 1 root root 329 Feb  4  2019 /etc/logrotate.d/nginx
+
+drwxr-xr-x 8 root root 4096 Oct 26 15:12 /etc/nginx
+-rw-r--r-- 1 root root 217 Feb  4  2019 /etc/nginx/snippets/snakeoil.conf
+ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+31m/ssl-cert-snakeoil.key;sl/private
+-rw-r--r-- 1 root root 423 Feb  4  2019 /etc/nginx/snippets/fastcgi-php.conf
+fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+try_files $fastcgi_script_name =404;
+set $path_info $fastcgi_path_info;
+0m $path_info;PATH_INFO                                                                                                                                                                 
+fastcgi_index index.php;
+0mgi.conf;stc                                                                                                                                                                           
+-rw-r--r-- 1 root root 1519 Oct 18 14:21 /etc/nginx/nginx.conf
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+mconf;e /etc/nginx/modules-enabled/*.                                                                                                                                                   
+events {
+        worker_connections 768;
+}
+http {
+        client_max_body_size 1000M;
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+0m 2048;types_hash_max_size                                                                                                                                                             
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        ssl_prefer_server_ciphers on;
+        access_log /var/log/nginx/access.log;
+mginx/error.log;g /var/log/n
+        gzip on;
+        include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+}
+  2019 /etc/nginx/fastcgi.confb  4
+fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+fastcgi_param  QUERY_STRING       $query_string;
+od;tcgi_param  REQUEST_METHOD     $request_meth                                                                                                                                         
+fastcgi_param  CONTENT_TYPE       $content_type;
+fastcgi_param  CONTENT_LENGTH     $content_length;
+fastcgi_param  SCRIPT_NAME        $fastcgi_script_name;
+mram  REQUEST_URI        $request_uri;
+fastcgi_param  DOCUMENT_URI       $document_uri;
+fastcgi_param  DOCUMENT_ROOT      $document_root;
+ $server_protocol;VER_PROTOCOL                                                                                                                                                          
+fastcgi_param  REQUEST_SCHEME     $scheme;
+fastcgi_param  HTTPS              $https if_not_empty;
+fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+mram  SERVER_SOFTWARE    nginx/$nginx_version;
+fastcgi_param  REMOTE_ADDR        $remote_addr;
+fastcgi_param  REMOTE_PORT        $remote_port;
+      $server_addr;ER_ADDR                                                                                                                                                              
+fastcgi_param  SERVER_PORT        $server_port;
+fastcgi_param  SERVER_NAME        $server_name;
+fastcgi_param  REDIRECT_STATUS    200;
+lrwxrwxrwx 1 root root 60 Sep 12  2023 /etc/nginx/modules-enabled/50-mod-http-xslt-filter.conf -> /usr/share/nginx/modules-available/mod-http-xslt-filter.conf
+1;31moad_module modules/ngx_http_xslt_filter_module.so;
+lrwxrwxrwx 1 root root 50 Sep 12  2023 /etc/nginx/modules-enabled/50-mod-stream.conf -> /usr/share/nginx/modules-available/mod-stream.conf
+mgx_stream_module.so;
+lrwxrwxrwx 1 root root 61 Sep 12  2023 /etc/nginx/modules-enabled/50-mod-http-image-filter.conf -> /usr/share/nginx/modules-available/mod-http-image-filter.conf
+load_module modules/ngx_http_image_filter_module.so;
+lrwxrwxrwx 1 root root 48 Sep 12  2023 /etc/nginx/modules-enabled/50-mod-mail.conf -> /usr/share/nginx/modules-available/mod-mail.conf
+load_module modules/ngx_mail_module.so;
+
+-rw-r--r-- 1 root root 374 Feb  4  2019 /etc/ufw/applications.d/nginx
+
+drwxr-xr-x 3 root root 4096 Oct 26 15:12 /usr/lib/nginx
+
+-rwxr-xr-x 1 root root 1195152 Nov 10  2022 /usr/sbin/nginx
+
+drwxr-xr-x 2 root root 4096 Oct 26 15:12 /usr/share/doc/nginx
+
+drwxr-xr-x 4 root root 4096 Oct 26 15:12 /usr/share/nginx
+-rw-r--r-- 1 root root 40 Nov 10  2022 /usr/share/nginx/modules-available/mod-mail.conf
+load_module modules/ngx_mail_module.so;
+-rw-r--r-- 1 root root 42 Nov 10  2022 /usr/share/nginx/modules-available/mod-stream.conf
+m_module.so;modules/ngx_strea                                                                                                                                                           
+-rw-r--r-- 1 root root 52 Nov 10  2022 /usr/share/nginx/modules-available/mod-http-xslt-filter.conf
+load_module modules/ngx_http_xslt_filter_module.so;
+-rw-r--r-- 1 root root 53 Nov 10  2022 /usr/share/nginx/modules-available/mod-http-image-filter.conf
+31mp_image_filter_module.so;
+
+drwxr-xr-x 7 root root 4096 Sep 12  2023 /var/lib/nginx
+
+drwxr-xr-x 2 root adm 4096 Nov 21 10:52 /var/log/nginx
+
+drwxr-xr-x 2 www-data www-data 4096 Dec 13  2022 /var/www/dev.devvortex.htb/media/vendor/codemirror/mode/nginx
+
+
+╔══════════╣ Searching tmux sessions
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#open-shell-sessions                                                                                                  
+tmux 3.0a                                                                                                                                                                               
+
+╔══════════╣ Tmux sessions
+/tmp/tmux-33
+
+
+╔══════════╣ Analyzing Other Interesting Files (limit 70)
+-rw-r--r-- 1 root root 3771 Feb 25  2020 /etc/skel/.bashrc                                                                                                                              
+-rw-r--r-- 1 logan logan 3771 Sep 26 19:16 /home/logan/.bashrc
+
+
+╚════════════════════════════════════╝                                                                                                                            
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid                                                                                                        
+-rwsr-xr-- 1 root messagebus 51K Oct 25  2022 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+-rwsr-xr-x 1 root root 15K Jul  8  2019 /usr/lib/eject/dmcrypt-get-device
+-rwsr-xr-x 1 root root 23K Feb 21  2022 /usr/lib/policykit-1/polkit-agent-helper-1
+-rwsr-xr-x 1 root root 463K Aug  4  2023 /usr/lib/openssh/ssh-keysign
+-rwsr-xr-x 1 root root 55K May 30  2023 /usr/bin/mount  --->  Apple_Mac_OSX(Lion)_Kernel_xnu-1699.32.7_except_xnu-1699.24.8
+-rwsr-xr-x 1 root root 163K Apr  4  2023 /usr/bin/sudo  --->  check_if_the_sudo_version_is_vulnerable
+-rwsr-xr-x 1 root root 87K Nov 29  2022 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root 39K May 30  2023 /usr/bin/umount  --->  BSD/Linux(08-1996)
+-rwsr-xr-x 1 root root 67K Nov 29  2022 /usr/bin/passwd  --->  Apple_Mac_OSX(03-2006)/Solaris_8/9(12-2004)/SPARC_8/9/Sun_Solaris_2.3_to_2.5.1(02-1997)
+-rwsr-xr-x 1 root root 39K Mar  7  2020 /usr/bin/fusermount
+-rwsr-xr-x 1 root root 52K Nov 29  2022 /usr/bin/chsh
+-rwsr-sr-x 1 daemon daemon 55K Nov 12  2018 /usr/bin/at  --->  RTru64_UNIX_4.0g(CVE-2002-1614)
+-rwsr-xr-x 1 root root 84K Nov 29  2022 /usr/bin/chfn  --->  SuSE_9.3/10
+-rwsr-xr-x 1 root root 44K Nov 29  2022 /usr/bin/newgrp  --->  HP-UX_10.20
+-rwsr-xr-x 1 root root 67K May 30  2023 /usr/bin/su
+
+╔══════════╣ SGID
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid                                                                                                        
+-rwxr-sr-x 1 root shadow 43K Feb  2  2023 /usr/sbin/pam_extrausers_chkpwd
+-rwxr-sr-x 1 root shadow 43K Feb  2  2023 /usr/sbin/unix_chkpwd
+-rwxr-sr-x 1 root utmp 15K Sep 30  2019 /usr/lib/x86_64-linux-gnu/utempter/utempter
+-rwxr-sr-x 1 root tty 35K May 30  2023 /usr/bin/wall
+-rwxr-sr-x 1 root ssh 343K Aug  4  2023 /usr/bin/ssh-agent
+-rwxr-sr-x 1 root mail 15K Aug 26  2019 /usr/bin/mlock
+-rwxr-sr-x 1 root shadow 31K Nov 29  2022 /usr/bin/expiry
+-rwxr-sr-x 1 root tty 15K Mar 30  2020 /usr/bin/bsd-write
+-rwxr-sr-x 1 root shadow 83K Nov 29  2022 /usr/bin/chage
+-rwsr-sr-x 1 daemon daemon 55K Nov 12  2018 /usr/bin/at  --->  RTru64_UNIX_4.0g(CVE-2002-1614)
+-rwxr-sr-x 1 root crontab 43K Feb 13  2020 /usr/bin/crontab
+
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities                                                                                                         
+══╣ Current shell capabilities
+CapInh:  0x0000000000000000=                                                                                                                                                            
+CapPrm:  0x0000000000000000=
+CapEff:  0x0000000000000000=
+CapBnd:  0x0000003fffffffff=cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read
+CapAmb:  0x0000000000000000=
+
+══╣ Parent process capabilities
+CapInh:  0x0000000000000000=                                                                                                                                                            
+CapPrm:  0x0000000000000000=
+CapEff:  0x0000000000000000=
+CapBnd:  0x0000003fffffffff=cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read
+CapAmb:  0x0000000000000000=
+
+
+Files with capabilities (limited to 50):
+/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper = cap_net_bind_service,cap_net_admin+ep
+/usr/bin/ping = cap_net_raw+ep
+/usr/bin/mtr-packet = cap_net_raw+ep
+/usr/bin/traceroute6.iputils = cap_net_raw+ep
+
+
+══════════╣ Files (scripts) in /etc/profile.d/
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#profiles-files                                                                                                       
+total 32                                                                                                                                                                                
+drwxr-xr-x   2 root root 4096 Oct 26 15:12 .
+drwxr-xr-x 106 root root 4096 Feb 26 14:33 ..
+-rw-r--r--   1 root root   96 Dec  5  2019 01-locale-fix.sh
+-rw-r--r--   1 root root 1557 Feb 17  2020 Z97-byobu.sh
+-rw-r--r--   1 root root  729 Feb  2  2020 bash_completion.sh
+-rw-r--r--   1 root root 1003 Aug 13  2019 cedilla-portuguese.sh
+-rw-r--r--   1 root root 1107 Nov  3  2019 gawk.csh
+-rw-r--r--   1 root root  757 Nov  3  2019 gawk.sh
+
+
+══════════╣ Files (scripts) in /etc/profile.d/
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#profiles-files                                                                                                       
+total 32                                                                                                                                                                                
+drwxr-xr-x   2 root root 4096 Oct 26 15:12 .
+drwxr-xr-x 106 root root 4096 Feb 26 14:33 ..
+-rw-r--r--   1 root root   96 Dec  5  2019 01-locale-fix.sh
+-rw-r--r--   1 root root 1557 Feb 17  2020 Z97-byobu.sh
+-rw-r--r--   1 root root  729 Feb  2  2020 bash_completion.sh
+-rw-r--r--   1 root root 1003 Aug 13  2019 cedilla-portuguese.sh
+-rw-r--r--   1 root root 1107 Nov  3  2019 gawk.csh
+-rw-r--r--   1 root root  757 Nov  3  2019 gawk.sh
+
+
+╔══════════╣ Executable files potentially added by user (limit 70)
+2024-02-26+14:45:20.9334579440 /var/www/devvortex/js/bootstrap.js
+2023-10-26+15:04:29.9275814350 /usr/local/sbin/laurel
+
+
+╔══════════╣ Searching passwords in config PHP files
+/var/www/dev.devvortex.htb/configuration.php:   public $password = 'P4ntherg0t1n5r3c0n##';
+
+╔══════════╣ Searching *password* or *credential* files in home (limit 70)
+/etc/pam.d/common-password
+/usr/bin/systemd-ask-password
+/usr/bin/systemd-tty-ask-password-agent
+/usr/lib/git-core/git-credential
+/usr/lib/git-core/git-credential-cache
+/usr/lib/git-core/git-credential-cache--daemon
+/usr/lib/git-core/git-credential-store
+  #)There are more creds/passwds files in the previous parent folder
+
+/usr/lib/grub/i386-pc/password.mod
+/usr/lib/grub/i386-pc/password_pbkdf2.mod
+/usr/lib/mysql/plugin/component_validate_password.so
+/usr/lib/mysql/plugin/validate_password.so
+/usr/lib/python3/dist-packages/keyring/__pycache__/credentials.cpython-38.pyc
+/usr/lib/python3/dist-packages/keyring/credentials.py
+/usr/lib/python3/dist-packages/launchpadlib/__pycache__/credentials.cpython-38.pyc
+/usr/lib/python3/dist-packages/launchpadlib/credentials.py
+/usr/lib/python3/dist-packages/launchpadlib/tests/__pycache__/test_credential_store.cpython-38.pyc
+/usr/lib/python3/dist-packages/launchpadlib/tests/test_credential_store.py
+/usr/lib/python3/dist-packages/oauthlib/oauth2/rfc6749/grant_types/__pycache__/client_credentials.cpython-38.pyc
+/usr/lib/python3/dist-packages/oauthlib/oauth2/rfc6749/grant_types/__pycache__/resource_owner_password_credentials.cpython-38.pyc
+/usr/lib/python3/dist-packages/oauthlib/oauth2/rfc6749/grant_types/client_credentials.py
+/usr/lib/python3/dist-packages/oauthlib/oauth2/rfc6749/grant_types/resource_owner_password_credentials.py
+/usr/lib/python3/dist-packages/twisted/cred/__pycache__/credentials.cpython-38.pyc
+/usr/lib/python3/dist-packages/twisted/cred/credentials.py
+/usr/lib/systemd/system/multi-user.target.wants/systemd-ask-password-wall.path
+/usr/lib/systemd/system/sysinit.target.wants/systemd-ask-password-console.path
+stemd-ask-password-console.path
+/usr/lib/systemd/system/systemd-ask-password-console.service
+/usr/lib/systemd/system/systemd-ask-password-plymouth.path
+/usr/lib/systemd/system/systemd-ask-password-plymouth.service
+  #)There are more creds/passwds files in the previous parent folder
+
+/usr/share/doc/git/contrib/credential
+/usr/share/doc/git/contrib/credential/gnome-keyring/git-credential-gnome-keyring.c
+/usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret.c
+/usr/share/doc/git/contrib/credential/netrc/git-credential-netrc
+/usr/share/doc/git/contrib/credential/netrc/t-git-credential-netrc.sh
+/usr/share/doc/git/contrib/credential/osxkeychain/git-credential-osxkeychain.c
+/usr/share/doc/git/contrib/credential/wincred/git-credential-wincred.c
+/usr/share/man/man1/git-credential-cache--daemon.1.gz
+/usr/share/man/man1/git-credential-cache.1.gz
+/usr/share/man/man1/git-credential-store.1.gz
+/usr/share/man/man1/git-credential.1.gz
+  #)There are more creds/passwds files in the previous parent folder
+
+/usr/share/man/man7/gitcredentials.7.gz
+/usr/share/man/man8/systemd-ask-password-console.path.8.gz
+/usr/share/man/man8/systemd-ask-password-console.service.8.gz
+/usr/share/man/man8/systemd-ask-password-wall.path.8.gz
+/usr/share/man/man8/systemd-ask-password-wall.service.8.gz
+  #)There are more creds/passwds files in the previous parent folder
+
+/usr/share/pam/common-password.md5sums
+/var/cache/debconf/passwords.dat
+/var/lib/cloud/instances/f97e41c8-944d-4b3f-a3a8-8db23afb94f3/sem/config_set_passwords
+/var/lib/fwupd/pki/secret.key
+/var/lib/pam/password
+d.phpwww/dev.devvortex.htb/layouts/joomla/form/field/passwor                                                                                                                            
+/var/www/dev.devvortex.htb/media/system/js/fields/passwordstrength-es5.js
+/var/www/dev.devvortex.htb/media/system/js/fields/passwordstrength-es5.min.js
+/var/www/dev.devvortex.htb/media/system/js/fields/passwordstrength-es5.min.js.gz
+/var/www/dev.devvortex.htb/media/system/js/fields/passwordstrength.js
+  #)There are more creds/passwds files in the previous parent folder
+
