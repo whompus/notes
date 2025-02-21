@@ -55,6 +55,7 @@
     - [3. DOM-Based XSS](#3-dom-based-xss)
   - [Intermediate XSS Techniques](#intermediate-xss-techniques)
   - [Identifying XSS Vulns](#identifying-xss-vulns)
+    - [Examples](#examples)
   - [Mitigation](#mitigation)
   - [Priv Esc via XSS](#priv-esc-via-xss)
 
@@ -655,6 +656,73 @@ Most common encodings we will encounter are HTML encoding and URL encoding.
 - URL encoding (also called percent encoding) is used to convert non-ASCII and reserved characters in URLs, such as converting a space to `%20`
 - HTML encoding (also called character references) `<` becomes `&lt;` and `>` becomes `&gt;`, which are displayed on the page as the literal characters `<` and `>`, not as HTML tags. 
 
+#### Examples
+
+1. Directly Inserting User Input into HTML:
+
+Vulnerable code:
+
+```javascript
+Copy code
+var user_input = document.getElementById('user_input').value;
+document.getElementById('output').innerHTML = user_input;
+```
+
+In this case, the user input is directly inserted into the HTML of the page. If the user input were something like `<script>malicious code here</script>`, that code would be executed.
+
+
+Safer code:
+
+```javascript
+Copy code
+var user_input = document.getElementById('user_input').value;
+document.getElementById('output').innerText = user_input;
+```
+
+Here, by using `innerText` instead of `innerHTML`, the browser treats the user input as literal text, not HTML or JavaScript code.
+
+
+2. Not Escaping Special Characters in User Input:
+
+Vulnerable code:
+
+```javascript
+Copy code
+var user_input = document.getElementById('user_input').value;
+var element = `<div>${user_input}</div>`;
+document.body.innerHTML = element;
+```
+In this case, the user input is inserted into an HTML template. If the user input were something like `</div><script>malicious code here</script><div>`, that code would be executed.
+
+
+Safer code:
+
+```javascript
+Copy code
+var user_input = document.getElementById('user_input').value;
+var textNode = document.createTextNode(user_input);
+var element = document.createElement("div");
+element.appendChild(textNode);
+document.body.appendChild(element);
+```
+
+Here, instead of using a template string, a text node is created for the user input and appended to a new `div` element. This way, the user input is treated as plain text, not HTML or JavaScript code.
+
+3. Using eval() with User Input:
+
+Vulnerable code:
+
+```javascript
+Copy code
+var user_input = document.getElementById('user_input').value;
+eval(user_input);
+```
+
+The `eval()` function executes JavaScript code represented as a string. If user input is passed directly to `eval()`, an attacker could execute any JavaScript code they want.
+
+Safer code:
+
+Avoid using `eval()` if at all possible. If you need to convert a string representation of an object into an actual object, consider using `JSON.parse()` instead (assuming the string is formatted as valid JSON).
 
 
 ### Mitigation
